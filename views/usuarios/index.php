@@ -183,7 +183,9 @@
 
 <script>
 function confirmarEliminar(id, nombre) {
-    const mensaje = '¿Está seguro que desea desactivar al usuario "' + nombre + '"?\n\nEl usuario no podrá acceder al sistema.';
+    // Escapar el nombre para prevenir problemas con comillas
+    const nombreEscapado = nombre.replace(/'/g, "\\'").replace(/"/g, '\\"');
+    const mensaje = '¿Está seguro que desea desactivar al usuario "' + nombreEscapado + '"?\n\nEl usuario no podrá acceder al sistema.';
     if (confirm(mensaje)) {
         window.location.href = '<?php echo BASE_URL; ?>usuarios/eliminar/' + id;
     }

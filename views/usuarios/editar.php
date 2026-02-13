@@ -249,26 +249,27 @@ function togglePassword(fieldId) {
 document.getElementById('formEditarUsuario').addEventListener('submit', function(e) {
     const password = document.getElementById('password').value;
     const passwordConfirm = document.getElementById('password_confirm').value;
-    const passwordConfirmField = document.getElementById('password_confirm');
+    const passwordConfirmInput = document.getElementById('password_confirm');
+    const passwordConfirmGroup = passwordConfirmInput.closest('.col-md-6');
     
     // Solo validar si se está cambiando la contraseña
     if (password || passwordConfirm) {
         if (password !== passwordConfirm) {
             e.preventDefault();
-            passwordConfirmField.classList.add('is-invalid');
+            passwordConfirmInput.classList.add('is-invalid');
             
             // Crear o actualizar mensaje de error
-            let errorDiv = passwordConfirmField.nextElementSibling;
-            if (!errorDiv || !errorDiv.classList.contains('invalid-feedback')) {
+            let errorDiv = passwordConfirmGroup.querySelector('.invalid-feedback');
+            if (!errorDiv) {
                 errorDiv = document.createElement('div');
                 errorDiv.className = 'invalid-feedback';
-                passwordConfirmField.parentNode.appendChild(errorDiv);
+                passwordConfirmGroup.appendChild(errorDiv);
             }
             errorDiv.textContent = 'Las contraseñas no coinciden';
-            passwordConfirmField.focus();
+            passwordConfirmInput.focus();
             return false;
         } else {
-            passwordConfirmField.classList.remove('is-invalid');
+            passwordConfirmInput.classList.remove('is-invalid');
         }
     }
 });
