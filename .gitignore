@@ -1,0 +1,22 @@
+# Archivos de entorno
+.env
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de logs
+*.log
+
+# Directorio de uploads (solo ignorar archivos, no la estructura)
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Archivos temporales
+tmp/
+temp/
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-*

@@ -1,0 +1,22 @@
+# Habilitar reescritura de URLs
+RewriteEngine On
+
+# Si el archivo o directorio no existe, redirigir al index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+
+# Deshabilitar listado de directorios
+Options -Indexes
+
+# Proteger archivos de configuración
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Proteger archivos sensibles
+<FilesMatch "\.(sql|env|log)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
