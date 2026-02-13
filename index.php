@@ -244,6 +244,27 @@ $router->post('/servicios/actualizar', function() {
     $controller->actualizar();
 });
 
+$router->get('/servicios/asignar-material/([0-9]+)', function($id) {
+    Auth::requirePermission('servicios', 'actualizar');
+    loadController('ServiciosController');
+    $controller = new ServiciosController();
+    $controller->asignarMaterial($id);
+});
+
+$router->post('/servicios/guardar-material', function() {
+    Auth::requirePermission('servicios', 'actualizar');
+    loadController('ServiciosController');
+    $controller = new ServiciosController();
+    $controller->guardarMaterial();
+});
+
+$router->get('/servicios/eliminar-material/([0-9]+)', function($id) {
+    Auth::requirePermission('servicios', 'actualizar');
+    loadController('ServiciosController');
+    $controller = new ServiciosController();
+    $controller->eliminarMaterial($id);
+});
+
 // Rutas de clientes
 $router->get('/clientes', function() {
     Auth::requirePermission('clientes', 'leer');

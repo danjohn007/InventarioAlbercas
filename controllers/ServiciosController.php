@@ -408,4 +408,232 @@ class ServiciosController {
             exit;
         }
     }
+    
+    public function asignarMaterial($id) {
+        Auth::requirePermission('servicios', 'actualizar');
+        
+        $db = Database::getInstance();
+        
+        $sql = "SELECT * FROM servicios WHERE id = :id";
+        $servicio = $db->query($sql, ['id' => $id])->fetch();
+        
+        if (!$servicio) {
+            $_SESSION['error_message'] = 'Servicio no encontrado';
+            header('Location: ' . BASE_URL . 'servicios');
+            exit;
+        }
+        
+        $sqlProductos = "SELECT id, codigo, nombre, unidad_medida, stock_actual, costo_unitario 
+                         FROM productos WHERE activo = 1 ORDER BY nombre";
+        $productos = $db->query($sqlProductos)->fetchAll();
+        
+        $pageTitle = 'Asignar Material';
+        $activeMenu = 'servicios';
+        
+        ob_start();
+        include ROOT_PATH . '/views/servicios/asignar_material.php';
+        $content = ob_get_clean();
+        
+        require ROOT_PATH . '/views/layouts/main.php';
+    }
+    
+    public function guardarMaterial() {
+        Auth::requirePermission('servicios', 'actualizar');
+        
+        try {
+            $db = Database::getInstance();
+            $db->getConnection()->beginTransaction();
+            
+            $errores = [];
+            
+            $servicio_id = isset($_POST['servicio_id']) ? (int)$_POST['servicio_id'] : 0;
+            $producto_id = isset($_POST['producto_id']) ? (int)$_POST['producto_id'] : 0;
+            $cantidad = isset($_POST['cantidad']) ? (float)$_POST['cantidad'] : 0;
+            
+            if ($servicio_id <= 0) {
+                $errores[] = 'Servicio inválido';
+            }
+            
+            if ($producto_id <= 0) {
+                $errores[] = 'Debe seleccionar un producto';
+            }
+            
+            if ($cantidad <= 0) {
+                $errores[] = 'La cantidad debe ser mayor a 0';
+            }
+            
+            $sqlProducto = "SELECT stock_actual, costo_unitario FROM productos WHERE id = :id AND activo = 1";
+            $producto = $db->query($sqlProducto, ['id' => $producto_id])->fetch();
+            
+            if (!$producto) {
+                $errores[] = 'Producto no encontrado';
+            } elseif ($producto['stock_actual'] < $cantidad) {
+                $errores[] = 'Stock insuficiente. Stock actual: ' . number_format($producto['stock_actual'], 2);
+            }
+            
+            if (!empty($errores)) {
+                $_SESSION['error_message'] = '<ul class="mb-0"><li>' . implode('</li><li>', $errores) . '</li></ul>';
+                header('Location: ' . BASE_URL . 'servicios/asignar-material/' . $servicio_id);
+                exit;
+            }
+            
+            $costo_unitario = $producto['costo_unitario'];
+            $costo_total = $cantidad * $costo_unitario;
+            $fecha_asignacion = date('Y-m-d H:i:s');
+            
+            $sqlMaterial = "INSERT INTO servicio_materiales (servicio_id, producto_id, cantidad, costo_unitario, costo_total, fecha_asignacion) 
+                            VALUES (:servicio_id, :producto_id, :cantidad, :costo_unitario, :costo_total, :fecha_asignacion)";
+            
+            $db->query($sqlMaterial, [
+                'servicio_id' => $servicio_id,
+                'producto_id' => $producto_id,
+                'cantidad' => $cantidad,
+                'costo_unitario' => $costo_unitario,
+                'costo_total' => $costo_total,
+                'fecha_asignacion' => $fecha_asignacion
+            ]);
+            
+            $stock_nuevo = $producto['stock_actual'] - $cantidad;
+            $sqlUpdateStock = "UPDATE productos SET stock_actual = :stock_nuevo WHERE id = :id";
+            $db->query($sqlUpdateStock, ['stock_nuevo' => $stock_nuevo, 'id' => $producto_id]);
+            
+            $sqlMovimiento = "INSERT INTO inventario_movimientos 
+                            (producto_id, tipo_movimiento, cantidad, costo_unitario, costo_total, 
+                            stock_anterior, stock_nuevo, motivo, usuario_id, servicio_id, fecha_movimiento) 
+                            VALUES (:producto_id, 'salida', :cantidad, :costo_unitario, :costo_total, 
+                            :stock_anterior, :stock_nuevo, :motivo, :usuario_id, :servicio_id, :fecha_movimiento)";
+            
+            $db->query($sqlMovimiento, [
+                'producto_id' => $producto_id,
+                'cantidad' => $cantidad,
+                'costo_unitario' => $costo_unitario,
+                'costo_total' => $costo_total,
+                'stock_anterior' => $producto['stock_actual'],
+                'stock_nuevo' => $stock_nuevo,
+                'motivo' => 'Asignación a servicio',
+                'usuario_id' => Auth::user()['id'],
+                'servicio_id' => $servicio_id,
+                'fecha_movimiento' => $fecha_asignacion
+            ]);
+            
+            $sqlCostoMateriales = "SELECT IFNULL(SUM(costo_total), 0) as total FROM servicio_materiales WHERE servicio_id = :id";
+            $costo_materiales = $db->query($sqlCostoMateriales, ['id' => $servicio_id])->fetch()['total'];
+            
+            $sqlServicio = "SELECT costo_mano_obra, otros_gastos FROM servicios WHERE id = :id";
+            $servicio = $db->query($sqlServicio, ['id' => $servicio_id])->fetch();
+            
+            $total = $servicio['costo_mano_obra'] + $costo_materiales + $servicio['otros_gastos'];
+            
+            $sqlUpdateServicio = "UPDATE servicios SET costo_materiales = :costo_materiales, total = :total WHERE id = :id";
+            $db->query($sqlUpdateServicio, [
+                'costo_materiales' => $costo_materiales,
+                'total' => $total,
+                'id' => $servicio_id
+            ]);
+            
+            Auth::registrarAuditoria(
+                Auth::user()['id'],
+                'asignar_material',
+                'servicio_materiales',
+                $servicio_id,
+                "Material asignado a servicio - Producto ID: $producto_id - Cantidad: $cantidad"
+            );
+            
+            $db->getConnection()->commit();
+            
+            $_SESSION['success_message'] = 'Material asignado exitosamente';
+            header('Location: ' . BASE_URL . 'servicios/ver/' . $servicio_id);
+            exit;
+            
+        } catch (Exception $e) {
+            $db->getConnection()->rollBack();
+            error_log("Error al asignar material: " . $e->getMessage());
+            $_SESSION['error_message'] = 'Error al asignar el material';
+            header('Location: ' . BASE_URL . 'servicios');
+            exit;
+        }
+    }
+    
+    public function eliminarMaterial($id) {
+        Auth::requirePermission('servicios', 'actualizar');
+        
+        try {
+            $db = Database::getInstance();
+            $db->getConnection()->beginTransaction();
+            
+            $sqlMaterial = "SELECT sm.*, s.costo_mano_obra, s.otros_gastos 
+                           FROM servicio_materiales sm
+                           INNER JOIN servicios s ON sm.servicio_id = s.id
+                           WHERE sm.id = :id";
+            $material = $db->query($sqlMaterial, ['id' => $id])->fetch();
+            
+            if (!$material) {
+                $_SESSION['error_message'] = 'Material no encontrado';
+                header('Location: ' . BASE_URL . 'servicios');
+                exit;
+            }
+            
+            $sqlProducto = "SELECT stock_actual FROM productos WHERE id = :id";
+            $producto = $db->query($sqlProducto, ['id' => $material['producto_id']])->fetch();
+            
+            $stock_nuevo = $producto['stock_actual'] + $material['cantidad'];
+            $sqlUpdateStock = "UPDATE productos SET stock_actual = :stock_nuevo WHERE id = :id";
+            $db->query($sqlUpdateStock, ['stock_nuevo' => $stock_nuevo, 'id' => $material['producto_id']]);
+            
+            $sqlMovimiento = "INSERT INTO inventario_movimientos 
+                            (producto_id, tipo_movimiento, cantidad, costo_unitario, costo_total, 
+                            stock_anterior, stock_nuevo, motivo, usuario_id, servicio_id, fecha_movimiento) 
+                            VALUES (:producto_id, 'entrada', :cantidad, :costo_unitario, :costo_total, 
+                            :stock_anterior, :stock_nuevo, :motivo, :usuario_id, :servicio_id, :fecha_movimiento)";
+            
+            $db->query($sqlMovimiento, [
+                'producto_id' => $material['producto_id'],
+                'cantidad' => $material['cantidad'],
+                'costo_unitario' => $material['costo_unitario'],
+                'costo_total' => $material['costo_total'],
+                'stock_anterior' => $producto['stock_actual'],
+                'stock_nuevo' => $stock_nuevo,
+                'motivo' => 'Devolución de material de servicio',
+                'usuario_id' => Auth::user()['id'],
+                'servicio_id' => $material['servicio_id'],
+                'fecha_movimiento' => date('Y-m-d H:i:s')
+            ]);
+            
+            $sqlDelete = "DELETE FROM servicio_materiales WHERE id = :id";
+            $db->query($sqlDelete, ['id' => $id]);
+            
+            $sqlCostoMateriales = "SELECT IFNULL(SUM(costo_total), 0) as total FROM servicio_materiales WHERE servicio_id = :id";
+            $costo_materiales = $db->query($sqlCostoMateriales, ['id' => $material['servicio_id']])->fetch()['total'];
+            
+            $total = $material['costo_mano_obra'] + $costo_materiales + $material['otros_gastos'];
+            
+            $sqlUpdateServicio = "UPDATE servicios SET costo_materiales = :costo_materiales, total = :total WHERE id = :id";
+            $db->query($sqlUpdateServicio, [
+                'costo_materiales' => $costo_materiales,
+                'total' => $total,
+                'id' => $material['servicio_id']
+            ]);
+            
+            Auth::registrarAuditoria(
+                Auth::user()['id'],
+                'eliminar_material',
+                'servicio_materiales',
+                $material['servicio_id'],
+                "Material eliminado del servicio - Material ID: $id"
+            );
+            
+            $db->getConnection()->commit();
+            
+            $_SESSION['success_message'] = 'Material eliminado y devuelto al inventario exitosamente';
+            header('Location: ' . BASE_URL . 'servicios/ver/' . $material['servicio_id']);
+            exit;
+            
+        } catch (Exception $e) {
+            $db->getConnection()->rollBack();
+            error_log("Error al eliminar material: " . $e->getMessage());
+            $_SESSION['error_message'] = 'Error al eliminar el material';
+            header('Location: ' . BASE_URL . 'servicios');
+            exit;
+        }
+    }
 }

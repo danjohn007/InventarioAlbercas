@@ -99,8 +99,13 @@
 
         <!-- Materiales Utilizados -->
         <div class="card mb-3">
-            <div class="card-header bg-success text-white">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="bi bi-box-seam"></i> Materiales Utilizados</h5>
+                <?php if (Auth::can('servicios', 'actualizar')): ?>
+                    <a href="<?php echo BASE_URL; ?>servicios/asignar-material/<?php echo $servicio['id']; ?>" class="btn btn-sm btn-light">
+                        <i class="bi bi-plus-lg"></i> Asignar Material
+                    </a>
+                <?php endif; ?>
             </div>
             <div class="card-body">
                 <?php if (empty($materiales)): ?>
@@ -117,6 +122,9 @@
                                     <th>Cantidad</th>
                                     <th>Costo Unit.</th>
                                     <th>Costo Total</th>
+                                    <?php if (Auth::can('servicios', 'actualizar')): ?>
+                                        <th>Acción</th>
+                                    <?php endif; ?>
                                 </tr>
                             </thead>
                             <tbody>
@@ -127,6 +135,15 @@
                                         <td><?php echo number_format($material['cantidad'], 2); ?> <?php echo htmlspecialchars($material['unidad_medida']); ?></td>
                                         <td>$<?php echo number_format($material['costo_unitario'], 2); ?></td>
                                         <td><strong>$<?php echo number_format($material['costo_total'], 2); ?></strong></td>
+                                        <?php if (Auth::can('servicios', 'actualizar')): ?>
+                                            <td>
+                                                <a href="<?php echo BASE_URL; ?>servicios/eliminar-material/<?php echo $material['id']; ?>" 
+                                                   class="btn btn-sm btn-outline-danger"
+                                                   onclick="return confirm('¿Está seguro de eliminar este material? Se devolverá al inventario.');">
+                                                    <i class="bi bi-trash"></i>
+                                                </a>
+                                            </td>
+                                        <?php endif; ?>
                                     </tr>
                                 <?php endforeach; ?>
                             </tbody>
