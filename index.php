@@ -101,7 +101,7 @@ $router->post('/usuarios/actualizar', function() {
     $controller->actualizar();
 });
 
-$router->post('/usuarios/eliminar/([0-9]+)', function($id) {
+$router->get('/usuarios/eliminar/([0-9]+)', function($id) {
     Auth::requirePermission('usuarios', 'eliminar');
     loadController('UsuariosController');
     $controller = new UsuariosController();
