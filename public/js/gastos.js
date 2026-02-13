@@ -2,11 +2,16 @@
  * Gastos module shared JavaScript utilities
  */
 
+// Get current date string in ISO format
+function getCurrentDateString() {
+    return new Date().toISOString().split('T')[0];
+}
+
 // Set max date to today for date inputs
 function initializeDateValidation(inputId) {
     const fechaInput = document.getElementById(inputId);
     if (fechaInput) {
-        fechaInput.max = new Date().toISOString().split('T')[0];
+        fechaInput.max = getCurrentDateString();
     }
 }
 

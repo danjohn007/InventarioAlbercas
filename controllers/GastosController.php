@@ -187,7 +187,8 @@ class GastosController {
                     if (!is_dir($uploadDir)) {
                         mkdir($uploadDir, 0755, true);
                     }
-                    $comprobante = 'comprobante_' . time() . '_' . uniqid() . '.' . $extension;
+                    $randomName = bin2hex(random_bytes(16));
+                    $comprobante = 'comprobante_' . time() . '_' . $randomName . '.' . $extension;
                     $uploadPath = $uploadDir . $comprobante;
                     if (!move_uploaded_file($_FILES['comprobante']['tmp_name'], $uploadPath)) {
                         $errores[] = 'Error al subir el comprobante';
@@ -364,7 +365,8 @@ class GastosController {
                     if (!is_dir($uploadDir)) {
                         mkdir($uploadDir, 0755, true);
                     }
-                    $newComprobante = 'comprobante_' . time() . '_' . uniqid() . '.' . $extension;
+                    $randomName = bin2hex(random_bytes(16));
+                    $newComprobante = 'comprobante_' . time() . '_' . $randomName . '.' . $extension;
                     $uploadPath = $uploadDir . $newComprobante;
                     if (move_uploaded_file($_FILES['comprobante']['tmp_name'], $uploadPath)) {
                         if (!empty($comprobante) && file_exists($uploadDir . $comprobante)) {
