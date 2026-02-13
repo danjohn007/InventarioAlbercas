@@ -9,9 +9,9 @@ class Database {
     private function __construct() {
         try {
             $host = Config::get('DB_HOST', 'localhost');
-            $dbname = Config::get('DB_NAME', 'inventario_albercas');
-            $username = Config::get('DB_USER', 'root');
-            $password = Config::get('DB_PASS', '');
+            $dbname = Config::get('DB_NAME', 'fix360_inventario');
+            $username = Config::get('DB_USER', 'fix360_inventario');
+            $password = Config::get('DB_PASS', 'Danjohn007');
             $port = Config::get('DB_PORT', '3306');
             
             $dsn = "mysql:host=$host;port=$port;dbname=$dbname;charset=utf8mb4";
