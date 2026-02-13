@@ -146,16 +146,9 @@
     </div>
 </div>
 
+<script src="<?php echo BASE_URL; ?>public/js/gastos.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Set max date to today
-    const fechaInput = document.getElementById('fecha_gasto');
-    fechaInput.max = new Date().toISOString().split('T')[0];
-    
-    // Optional: Auto-select cliente if servicio is selected
-    const servicioSelect = document.getElementById('servicio_id');
-    const clienteSelect = document.getElementById('cliente_id');
-    
     <?php 
     // Create JS mapping of service to cliente
     $servicioClienteMap = [];
@@ -167,12 +160,6 @@ document.addEventListener('DOMContentLoaded', function() {
     ?>
     
     const servicioClienteMap = <?php echo json_encode($servicioClienteMap); ?>;
-    
-    servicioSelect.addEventListener('change', function() {
-        const servicioId = this.value;
-        if (servicioId && servicioClienteMap[servicioId]) {
-            clienteSelect.value = servicioClienteMap[servicioId];
-        }
-    });
+    initializeGastosForm(servicioClienteMap);
 });
 </script>

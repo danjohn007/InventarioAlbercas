@@ -183,7 +183,16 @@ class GastosController {
                 if (!in_array(strtolower($extension), $allowed)) {
                     $errores[] = 'Formato de archivo no permitido. Use PDF, JPG o PNG';
                 } else {
+                    $uploadDir = ROOT_PATH . '/public/uploads/comprobantes/';
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0755, true);
+                    }
                     $comprobante = 'comprobante_' . time() . '_' . uniqid() . '.' . $extension;
+                    $uploadPath = $uploadDir . $comprobante;
+                    if (!move_uploaded_file($_FILES['comprobante']['tmp_name'], $uploadPath)) {
+                        $errores[] = 'Error al subir el comprobante';
+                        $comprobante = null;
+                    }
                 }
             }
             
@@ -351,7 +360,20 @@ class GastosController {
                 if (!in_array(strtolower($extension), $allowed)) {
                     $errores[] = 'Formato de archivo no permitido. Use PDF, JPG o PNG';
                 } else {
-                    $comprobante = 'comprobante_' . time() . '_' . uniqid() . '.' . $extension;
+                    $uploadDir = ROOT_PATH . '/public/uploads/comprobantes/';
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0755, true);
+                    }
+                    $newComprobante = 'comprobante_' . time() . '_' . uniqid() . '.' . $extension;
+                    $uploadPath = $uploadDir . $newComprobante;
+                    if (move_uploaded_file($_FILES['comprobante']['tmp_name'], $uploadPath)) {
+                        if (!empty($comprobante) && file_exists($uploadDir . $comprobante)) {
+                            unlink($uploadDir . $comprobante);
+                        }
+                        $comprobante = $newComprobante;
+                    } else {
+                        $errores[] = 'Error al subir el comprobante';
+                    }
                 }
             }
             
