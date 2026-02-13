@@ -149,7 +149,7 @@ class UsuariosController {
             }
             
             if (!empty($errores)) {
-                $_SESSION['error_message'] = implode(', ', $errores);
+                $_SESSION['error_message'] = '<ul class="mb-0"><li>' . implode('</li><li>', $errores) . '</li></ul>';
                 header('Location: ' . BASE_URL . 'usuarios/crear');
                 exit;
             }
@@ -297,7 +297,7 @@ class UsuariosController {
             }
             
             if (!empty($errores)) {
-                $_SESSION['error_message'] = implode(', ', $errores);
+                $_SESSION['error_message'] = '<ul class="mb-0"><li>' . implode('</li><li>', $errores) . '</li></ul>';
                 header('Location: ' . BASE_URL . 'usuarios/editar/' . $id);
                 exit;
             }
