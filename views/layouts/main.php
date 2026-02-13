@@ -224,12 +224,14 @@
                 </li>
                 <?php endif; ?>
                 
+                <?php if (Auth::can('clientes', 'leer')): ?>
                 <li class="nav-item">
                     <a href="<?php echo BASE_URL; ?>clientes" class="nav-link <?php echo $activeMenu == 'clientes' ? 'active' : ''; ?>">
                         <i class="bi bi-person-badge"></i>
                         <span>Clientes</span>
                     </a>
                 </li>
+                <?php endif; ?>
                 
                 <?php if (Auth::can('reportes', 'leer')): ?>
                 <li class="nav-item">

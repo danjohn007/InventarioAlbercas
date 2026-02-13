@@ -246,35 +246,35 @@ $router->post('/servicios/actualizar', function() {
 
 // Rutas de clientes
 $router->get('/clientes', function() {
-    Auth::requireAuth();
+    Auth::requirePermission('clientes', 'leer');
     loadController('ClientesController');
     $controller = new ClientesController();
     $controller->index();
 });
 
 $router->get('/clientes/crear', function() {
-    Auth::requireAuth();
+    Auth::requirePermission('clientes', 'crear');
     loadController('ClientesController');
     $controller = new ClientesController();
     $controller->crear();
 });
 
 $router->post('/clientes/guardar', function() {
-    Auth::requireAuth();
+    Auth::requirePermission('clientes', 'crear');
     loadController('ClientesController');
     $controller = new ClientesController();
     $controller->guardar();
 });
 
 $router->get('/clientes/editar/([0-9]+)', function($id) {
-    Auth::requireAuth();
+    Auth::requirePermission('clientes', 'actualizar');
     loadController('ClientesController');
     $controller = new ClientesController();
     $controller->editar($id);
 });
 
 $router->post('/clientes/actualizar', function() {
-    Auth::requireAuth();
+    Auth::requirePermission('clientes', 'actualizar');
     loadController('ClientesController');
     $controller = new ClientesController();
     $controller->actualizar();
