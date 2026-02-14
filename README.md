@@ -5,7 +5,8 @@ Sistema web completo de administración de inventario, gastos y servicios para e
 > **✅ Última actualización (2026-02-14):** 
 > - Se resolvió el error 403 - FORBIDDEN con validación robusta de permisos. Ver [SOLUCION_403.md](SOLUCION_403.md)
 > - Se resolvió el error 403 en directorio /public. Ver [GUIA_RAPIDA.md](GUIA_RAPIDA.md)
-> - Se documentó el error open_basedir (requiere configuración del servidor). Ver [SOLUCION_OPEN_BASEDIR.md](SOLUCION_OPEN_BASEDIR.md)
+> - Se implementó solución para error open_basedir con archivo .user.ini. Ver [SOLUCION_OPEN_BASEDIR.md](SOLUCION_OPEN_BASEDIR.md)
+> - Se actualizaron rutas en documentación (inventario/3)
 
 ## 📋 Características Principales
 
