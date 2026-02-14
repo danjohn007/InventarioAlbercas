@@ -123,9 +123,9 @@ $dbDetails = '';
 // Intentar cargar .env si existe
 $envFile = __DIR__ . '/.env';
 $dbHost = 'localhost';
-$dbName = 'fix360_inventario';
-$dbUser = 'fix360_inventario';
-$dbPass = 'Danjohn007';
+$dbName = 'inventario_albercas';
+$dbUser = 'root';
+$dbPass = '';
 
 if (file_exists($envFile)) {
     $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
@@ -414,7 +414,7 @@ $systemInfo = [
 <body>
     <div class="container">
         <div class="header">
-            <h1>🏊‍♂️ Sistema de Inventario - Health Check</h1>
+            <h1>📋 Sistema de Inventario - Health Check</h1>
             <p>Verificación del estado del sistema</p>
             <div class="status-badge">
                 <?php echo $allPassed ? '✓ Todas las pruebas pasaron' : '⚠ Algunas pruebas fallaron'; ?>

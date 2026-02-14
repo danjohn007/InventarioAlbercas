@@ -273,7 +273,7 @@ Archivos de log adjuntos:
 
 2. **El error 403 en /public YA está resuelto** con los archivos agregados
 
-2. **No elimines** el directorio `/inventario/3/` mencionado en los logs hasta verificar su propósito
+3. **No elimines** el directorio `/inventario/3/` mencionado en los logs hasta verificar su propósito
 
 4. **Backup primero**: Antes de hacer cambios en el servidor, haz backup de:
    - Base de datos
