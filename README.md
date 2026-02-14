@@ -7,6 +7,7 @@ Sistema web completo de administración de inventario, gastos y servicios para e
 > - Se resolvió el error 403 en directorio /public. Ver [GUIA_RAPIDA.md](GUIA_RAPIDA.md)
 > - Se implementó solución para error open_basedir con archivo .user.ini. Ver [SOLUCION_OPEN_BASEDIR.md](SOLUCION_OPEN_BASEDIR.md)
 > - Se actualizaron rutas en documentación (inventario/3)
+> - **NUEVO:** Se resolvió el error 404 en ruta de login. Ver [SOLUCION_404_LOGIN.md](SOLUCION_404_LOGIN.md)
 
 ## 📋 Características Principales
 
