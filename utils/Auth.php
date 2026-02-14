@@ -28,6 +28,15 @@ class Auth {
             $user = $stmt->fetch();
             
             if ($user && password_verify($password, $user['password'])) {
+                // Decodificar permisos del rol
+                $permisos = json_decode($user['permisos'], true);
+                
+                // Validar que los permisos sean válidos
+                if (!is_array($permisos)) {
+                    error_log("ERROR: Permisos inválidos para el usuario '{$usuario}' (rol: {$user['rol_nombre']})");
+                    $permisos = []; // Array vacío como fallback
+                }
+                
                 // Guardar información en sesión
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['user_nombre'] = $user['nombre'];
@@ -35,7 +44,7 @@ class Auth {
                 $_SESSION['user_email'] = $user['email'];
                 $_SESSION['user_rol'] = $user['rol_nombre'];
                 $_SESSION['user_rol_id'] = $user['rol_id'];
-                $_SESSION['user_permisos'] = json_decode($user['permisos'], true);
+                $_SESSION['user_permisos'] = $permisos;
                 $_SESSION['logged_in'] = true;
                 
                 // Actualizar último acceso
@@ -97,9 +106,21 @@ class Auth {
             return false;
         }
         
+        // Verificar que exista la variable de permisos en sesión
+        if (!isset($_SESSION['user_permisos']) || !is_array($_SESSION['user_permisos'])) {
+            error_log("WARNING: user_permisos no está definido en la sesión para el usuario " . ($_SESSION['user_id'] ?? 'desconocido'));
+            return false;
+        }
+        
         $permisos = $_SESSION['user_permisos'];
         
         if (!isset($permisos[$modulo])) {
+            return false;
+        }
+        
+        // Verificar que el módulo tenga un array de permisos
+        if (!is_array($permisos[$modulo])) {
+            error_log("WARNING: permisos para módulo '$modulo' no es un array");
             return false;
         }
         
@@ -126,6 +147,22 @@ class Auth {
         self::requireAuth();
         
         if (!self::can($modulo, $accion)) {
+            // Registrar el intento de acceso no autorizado
+            $userId = $_SESSION['user_id'] ?? 'desconocido';
+            $userRol = $_SESSION['user_rol'] ?? 'desconocido';
+            error_log("403 FORBIDDEN: Usuario ID $userId (rol: $userRol) intentó acceder a $modulo:$accion");
+            
+            // Registrar en auditoría si es posible
+            if (isset($_SESSION['user_id'])) {
+                self::registrarAuditoria(
+                    $_SESSION['user_id'], 
+                    'acceso_denegado', 
+                    $modulo, 
+                    null, 
+                    "Intento de acceso a: $modulo:$accion"
+                );
+            }
+            
             http_response_code(403);
             require_once ROOT_PATH . '/views/errors/403.php';
             exit;

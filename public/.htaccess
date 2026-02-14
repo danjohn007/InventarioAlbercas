@@ -1,0 +1,65 @@
+# Configuración para el directorio public
+# Este directorio contiene archivos estáticos (JS, CSS, imágenes, uploads)
+
+# Habilitar reescritura de URLs
+RewriteEngine On
+
+# Permitir acceso a archivos estáticos
+<FilesMatch "\.(js|css|jpg|jpeg|png|gif|svg|ico|pdf|webp|woff|woff2|ttf|eot)$">
+    <IfModule mod_authz_core.c>
+        # Apache 2.4+
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        # Apache 2.2
+        Order allow,deny
+        Allow from all
+    </IfModule>
+</FilesMatch>
+
+# Denegar acceso a archivos PHP en este directorio
+<FilesMatch "\.php$">
+    <IfModule mod_authz_core.c>
+        # Apache 2.4+
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        # Apache 2.2
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Permitir solo index.php para redirección
+<Files "index.php">
+    <IfModule mod_authz_core.c>
+        # Apache 2.4+
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        # Apache 2.2
+        Order allow,deny
+        Allow from all
+    </IfModule>
+</Files>
+
+# Redirigir peticiones no encontradas al index principal
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ ../index.php [L,R=301]
+
+# Deshabilitar listado de directorios
+Options -Indexes
+
+# Proteger archivos sensibles
+<FilesMatch "\.(log|sql|env|ini|config)$">
+    <IfModule mod_authz_core.c>
+        # Apache 2.4+
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        # Apache 2.2
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>

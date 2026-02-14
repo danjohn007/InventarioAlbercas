@@ -2,11 +2,17 @@
 
 Sistema web completo de administración de inventario, gastos y servicios para empresas de mantenimiento, reparación e instalación de albercas.
 
+> **✅ Última actualización (2026-02-14):** 
+> - Se resolvió el error 403 - FORBIDDEN con validación robusta de permisos. Ver [SOLUCION_403.md](SOLUCION_403.md)
+> - Se resolvió el error 403 en directorio /public. Ver [GUIA_RAPIDA.md](GUIA_RAPIDA.md)
+> - Se documentó el error open_basedir (requiere configuración del servidor). Ver [SOLUCION_OPEN_BASEDIR.md](SOLUCION_OPEN_BASEDIR.md)
+
 ## 📋 Características Principales
 
 ### 🔐 Autenticación y Seguridad
 - Sistema de login con sesiones seguras
 - Control de acceso basado en roles (Administrador, Supervisor, Técnico)
+- Validación robusta de permisos con auditoría completa
 - Encriptación de contraseñas con `password_hash()`
 - Registro de auditoría de todas las acciones
 - Protección contra SQL Injection y XSS

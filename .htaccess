@@ -1,6 +1,12 @@
 # Habilitar reescritura de URLs
 RewriteEngine On
 
+# Configuración de PHP (intentar sobrescribir open_basedir si es posible)
+# Nota: Esto puede no funcionar en todos los servidores si está bloqueado por el admin
+<IfModule mod_php.c>
+    php_admin_value open_basedir none
+</IfModule>
+
 # Si el archivo o directorio no existe, redirigir al index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
@@ -11,12 +17,26 @@ Options -Indexes
 
 # Proteger archivos de configuración
 <FilesMatch "^\.">
-    Order allow,deny
-    Deny from all
+    <IfModule mod_authz_core.c>
+        # Apache 2.4+
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        # Apache 2.2
+        Order allow,deny
+        Deny from all
+    </IfModule>
 </FilesMatch>
 
 # Proteger archivos sensibles
 <FilesMatch "\.(sql|env|log)$">
-    Order allow,deny
-    Deny from all
+    <IfModule mod_authz_core.c>
+        # Apache 2.4+
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        # Apache 2.2
+        Order allow,deny
+        Deny from all
+    </IfModule>
 </FilesMatch>
