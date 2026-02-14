@@ -7,6 +7,25 @@ RewriteEngine On
     php_admin_value open_basedir none
 </IfModule>
 
+# Seguridad adicional - Headers HTTP
+<IfModule mod_headers.c>
+    # Prevenir Clickjacking
+    Header always set X-Frame-Options "SAMEORIGIN"
+    
+    # Protección XSS en navegadores antiguos
+    Header always set X-XSS-Protection "1; mode=block"
+    
+    # Prevenir MIME type sniffing
+    Header always set X-Content-Type-Options "nosniff"
+    
+    # Política de Referrer (no enviar información sensible)
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    
+    # Eliminar información del servidor
+    Header unset X-Powered-By
+    Header always unset X-Powered-By
+</IfModule>
+
 # Si el archivo o directorio no existe, redirigir al index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
@@ -29,7 +48,7 @@ Options -Indexes
 </FilesMatch>
 
 # Proteger archivos sensibles
-<FilesMatch "\.(sql|env|log)$">
+<FilesMatch "\.(sql|env|log|ini|md)$">
     <IfModule mod_authz_core.c>
         # Apache 2.4+
         Require all denied
