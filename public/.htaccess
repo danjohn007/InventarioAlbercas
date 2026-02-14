@@ -6,20 +6,41 @@ RewriteEngine On
 
 # Permitir acceso a archivos estáticos
 <FilesMatch "\.(js|css|jpg|jpeg|png|gif|svg|ico|pdf|webp|woff|woff2|ttf|eot)$">
-    Order allow,deny
-    Allow from all
+    <IfModule mod_authz_core.c>
+        # Apache 2.4+
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        # Apache 2.2
+        Order allow,deny
+        Allow from all
+    </IfModule>
 </FilesMatch>
 
 # Denegar acceso a archivos PHP en este directorio
 <FilesMatch "\.php$">
-    Order allow,deny
-    Deny from all
+    <IfModule mod_authz_core.c>
+        # Apache 2.4+
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        # Apache 2.2
+        Order allow,deny
+        Deny from all
+    </IfModule>
 </FilesMatch>
 
 # Permitir solo index.php para redirección
 <Files "index.php">
-    Order allow,deny
-    Allow from all
+    <IfModule mod_authz_core.c>
+        # Apache 2.4+
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        # Apache 2.2
+        Order allow,deny
+        Allow from all
+    </IfModule>
 </Files>
 
 # Redirigir peticiones no encontradas al index principal
@@ -32,6 +53,13 @@ Options -Indexes
 
 # Proteger archivos sensibles
 <FilesMatch "\.(log|sql|env|ini|config)$">
-    Order allow,deny
-    Deny from all
+    <IfModule mod_authz_core.c>
+        # Apache 2.4+
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        # Apache 2.2
+        Order allow,deny
+        Deny from all
+    </IfModule>
 </FilesMatch>
