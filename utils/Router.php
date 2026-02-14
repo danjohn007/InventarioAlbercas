@@ -52,6 +52,17 @@ class Router {
         $uri = isset($_GET['url']) ? $_GET['url'] : '/';
         $uri = rtrim($uri, '/');
         $uri = filter_var($uri, FILTER_SANITIZE_URL);
-        return $uri === '' ? '/' : $uri;
+        
+        // Ensure URI always starts with /
+        if ($uri === '' || $uri === false) {
+            return '/';
+        }
+        
+        // Add leading slash if not present
+        if ($uri[0] !== '/') {
+            $uri = '/' . $uri;
+        }
+        
+        return $uri;
     }
 }

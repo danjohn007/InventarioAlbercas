@@ -17,13 +17,19 @@ ERROR 403 - FORBIDDEN en /public (no se ve archivo index o php alguno)
 **Error:**
 ```
 PHP Warning: open_basedir restriction in effect. 
-File(/home1/fix360/public_html/inventario/2/index.php) 
+File(/home1/fix360/public_html/inventario/3/test.php) 
+is not within the allowed path(s): (/home1/fix30/public_html:/tmp)
+
+PHP Warning: open_basedir restriction in effect. 
+File(/home1/fix360/public_html/inventario/3/index.php) 
 is not within the allowed path(s): (/home1/fix30/public_html:/tmp)
 ```
 
 **Problema:** Discrepancia entre `fix360` y `fix30`
 
-**Solución:** Debe ser corregido por el administrador del servidor en cPanel
+**Soluciones aplicadas:**
+- ✅ Creado archivo `.user.ini` en la raíz del proyecto con configuración correcta
+- ⚠️ Si no funciona en 5 minutos, debe ser corregido por el administrador del servidor en cPanel
 
 ---
 
@@ -71,14 +77,29 @@ Si tienes acceso a cPanel:
 
 ### 4. Si NO tienes acceso a cPanel
 
-**Opción A:** Crear archivo `.user.ini` en el directorio de la aplicación:
+**Opción A:** Verificar archivo `.user.ini` (Ya creado)
+
+El archivo `.user.ini` ya está creado en la raíz del proyecto con el contenido:
+
+```ini
+open_basedir = "/home1/fix360:/tmp"
+```
+
+**IMPORTANTE:**
+- Este archivo funciona con PHP-FPM
+- Los cambios pueden tardar hasta 5 minutos en aplicarse
+- Si después de 5 minutos el error persiste, usar Opción B o C
+
+**Opción B:** Crear archivo adicional en subdirectorio (si es necesario)
+
+Si el error persiste, crear también en el subdirectorio:
 
 ```bash
-cd /home1/fix360/public_html/inventario/2/
+cd /home1/fix360/public_html/inventario/3/
 echo 'open_basedir = "/home1/fix360:/tmp"' > .user.ini
 ```
 
-**Opción B:** Contactar al soporte del hosting
+**Opción C:** Contactar al soporte del hosting
 
 Usar esta plantilla de email:
 
@@ -90,7 +111,7 @@ Hola,
 Estoy experimentando un error de configuración en mi cuenta de hosting:
 
 Error: PHP open_basedir restriction in effect
-Ruta de la aplicación: /home1/fix360/public_html/inventario/2/
+Ruta de la aplicación: /home1/fix360/public_html/inventario/3/
 open_basedir actual: /home1/fix30/public_html:/tmp
 
 Hay un error de tipeo en la configuración. Por favor actualizar:
@@ -98,6 +119,9 @@ De: /home1/fix30/public_html:/tmp
 A: /home1/fix360/public_html:/tmp
 
 O verificar si existe alguna configuración incorrecta en la cuenta fix360.
+
+Nota: He creado un archivo .user.ini en la aplicación, pero si el servidor
+no soporta PHP-FPM, será necesario hacer el cambio en cPanel.
 
 Gracias.
 ```
@@ -158,6 +182,7 @@ http://tudominio.com/public/js/algun-archivo.js
 ### Nuevos archivos:
 - ✅ `public/index.php` - Previene 403 en /public
 - ✅ `public/.htaccess` - Configuración del directorio público
+- ✅ `.user.ini` - **NUEVO**: Configuración de open_basedir para PHP-FPM
 - ✅ `SOLUCION_OPEN_BASEDIR.md` - Documentación completa
 - ✅ `diagnostico.php` - Script de diagnóstico
 - ✅ `GUIA_RAPIDA.md` - Esta guía
@@ -222,7 +247,8 @@ Si necesitas ayuda adicional:
 
 - [ ] Ejecuté `diagnostico.php` y revisé el reporte
 - [ ] Verifiqué que /public/ ya no muestra 403
-- [ ] Corregí open_basedir en cPanel o solicité soporte
+- [ ] Esperé 5 minutos para que .user.ini tome efecto
+- [ ] Si el error persiste, corregí open_basedir en cPanel o solicité soporte
 - [ ] Verifiqué que la aplicación carga correctamente
 - [ ] Revisé que no hay más errores en error_log
 - [ ] Eliminé `diagnostico.php` por seguridad
@@ -232,7 +258,8 @@ Si necesitas ayuda adicional:
 
 **Estado actual:**
 - ✅ Error 403 en /public: **RESUELTO**
-- ⚠️ Error open_basedir: **PENDIENTE (requiere servidor)**
+- ✅ Archivo .user.ini creado: **IMPLEMENTADO**
+- ⚠️ Error open_basedir: **PENDIENTE (esperar 5 min o requiere servidor)**
 
 **Fecha:** 2026-02-14
-**Versión:** 1.0
+**Versión:** 1.1
