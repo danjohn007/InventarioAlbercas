@@ -1,6 +1,12 @@
 # Habilitar reescritura de URLs
 RewriteEngine On
 
+# Configuración de PHP (intentar sobrescribir open_basedir si es posible)
+# Nota: Esto puede no funcionar en todos los servidores si está bloqueado por el admin
+<IfModule mod_php.c>
+    php_admin_value open_basedir none
+</IfModule>
+
 # Si el archivo o directorio no existe, redirigir al index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

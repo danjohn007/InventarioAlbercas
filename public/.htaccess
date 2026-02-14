@@ -1,0 +1,37 @@
+# Configuración para el directorio public
+# Este directorio contiene archivos estáticos (JS, CSS, imágenes, uploads)
+
+# Habilitar reescritura de URLs
+RewriteEngine On
+
+# Permitir acceso a archivos estáticos
+<FilesMatch "\.(js|css|jpg|jpeg|png|gif|svg|ico|pdf|webp|woff|woff2|ttf|eot)$">
+    Order allow,deny
+    Allow from all
+</FilesMatch>
+
+# Denegar acceso a archivos PHP en este directorio
+<FilesMatch "\.php$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Permitir solo index.php para redirección
+<Files "index.php">
+    Order allow,deny
+    Allow from all
+</Files>
+
+# Redirigir peticiones no encontradas al index principal
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ ../index.php [L,R=301]
+
+# Deshabilitar listado de directorios
+Options -Indexes
+
+# Proteger archivos sensibles
+<FilesMatch "\.(log|sql|env|ini|config)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
