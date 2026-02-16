@@ -52,6 +52,16 @@ class IngresosController {
         // Obtener categorías para el filtro
         $categorias = $db->query("SELECT * FROM categorias_ingreso WHERE activo = 1 ORDER BY nombre")->fetchAll();
         
+        // Variables para la vista
+        $totalMonto = $stats['total_monto'] ?? 0;
+        $totalRecords = $stats['total_ingresos'] ?? 0;
+        $promedioMonto = $stats['promedio_monto'] ?? 0;
+        
+        // Paginación (valores por defecto)
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $perPage = 20;
+        $totalPages = ceil($totalRecords / $perPage);
+        
         $pageTitle = 'Gestión de Ingresos';
         $activeMenu = 'ingresos';
         
@@ -103,9 +113,9 @@ class IngresosController {
         
         try {
             $sql = "INSERT INTO ingresos (categoria_id, concepto, descripcion, monto, fecha_ingreso, 
-                    forma_pago, servicio_id, cliente_id, observaciones, usuario_registro_id) 
+                    forma_pago, servicio_id, cliente_id, facturado, observaciones, usuario_registro_id) 
                     VALUES (:categoria_id, :concepto, :descripcion, :monto, :fecha_ingreso, 
-                    :forma_pago, :servicio_id, :cliente_id, :observaciones, :usuario_id)";
+                    :forma_pago, :servicio_id, :cliente_id, :facturado, :observaciones, :usuario_id)";
             
             $db->query($sql, [
                 'categoria_id' => $_POST['categoria_id'],
@@ -116,6 +126,7 @@ class IngresosController {
                 'forma_pago' => $_POST['forma_pago'],
                 'servicio_id' => !empty($_POST['servicio_id']) ? $_POST['servicio_id'] : null,
                 'cliente_id' => !empty($_POST['cliente_id']) ? $_POST['cliente_id'] : null,
+                'facturado' => isset($_POST['facturado']) ? 1 : 0,
                 'observaciones' => $_POST['observaciones'] ?? null,
                 'usuario_id' => $usuario['id']
             ]);
@@ -200,6 +211,7 @@ class IngresosController {
                     forma_pago = :forma_pago,
                     servicio_id = :servicio_id,
                     cliente_id = :cliente_id,
+                    facturado = :facturado,
                     observaciones = :observaciones
                     WHERE id = :id";
             
@@ -213,6 +225,7 @@ class IngresosController {
                 'forma_pago' => $_POST['forma_pago'],
                 'servicio_id' => !empty($_POST['servicio_id']) ? $_POST['servicio_id'] : null,
                 'cliente_id' => !empty($_POST['cliente_id']) ? $_POST['cliente_id'] : null,
+                'facturado' => isset($_POST['facturado']) ? 1 : 0,
                 'observaciones' => $_POST['observaciones'] ?? null
             ]);
             

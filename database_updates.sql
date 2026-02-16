@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS ingresos (
     servicio_id INT,
     cliente_id INT,
     comprobante VARCHAR(255),
+    facturado TINYINT(1) DEFAULT 0,
     observaciones TEXT,
     usuario_registro_id INT NOT NULL,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

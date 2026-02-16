@@ -16,6 +16,14 @@ class PdfExporter {
         $this->title = $title;
         $this->orientation = $orientation; // P = Portrait, L = Landscape
         
+        // Definir constantes si no existen
+        if (!defined('PDF_UNIT')) {
+            define('PDF_UNIT', 'mm');
+        }
+        if (!defined('PDF_PAGE_FORMAT')) {
+            define('PDF_PAGE_FORMAT', 'A4');
+        }
+        
         // Crear nuevo documento PDF
         $this->pdf = new TCPDF($orientation, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
         

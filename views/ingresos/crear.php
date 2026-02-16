@@ -71,6 +71,7 @@
                                 <option value="tarjeta">Tarjeta</option>
                                 <option value="transferencia">Transferencia</option>
                                 <option value="cheque">Cheque</option>
+                                <option value="otro">Otro</option>
                             </select>
                         </div>
 

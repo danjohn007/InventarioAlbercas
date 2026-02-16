@@ -77,6 +77,7 @@
                                 <option value="tarjeta" <?php echo $ingreso['forma_pago'] == 'tarjeta' ? 'selected' : ''; ?>>Tarjeta</option>
                                 <option value="transferencia" <?php echo $ingreso['forma_pago'] == 'transferencia' ? 'selected' : ''; ?>>Transferencia</option>
                                 <option value="cheque" <?php echo $ingreso['forma_pago'] == 'cheque' ? 'selected' : ''; ?>>Cheque</option>
+                                <option value="otro" <?php echo $ingreso['forma_pago'] == 'otro' ? 'selected' : ''; ?>>Otro</option>
                             </select>
                         </div>
 
