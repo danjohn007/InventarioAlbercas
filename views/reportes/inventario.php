@@ -354,10 +354,12 @@ const stockChart = new Chart(document.getElementById('stockChart'), {
 });
 
 function exportarPDF() {
-    alert('Funcionalidad de exportación a PDF estará disponible próximamente.');
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = '<?php echo BASE_URL; ?>reportes/inventario/pdf?' + params.toString();
 }
 
 function exportarExcel() {
-    alert('Funcionalidad de exportación a Excel estará disponible próximamente.');
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = '<?php echo BASE_URL; ?>reportes/inventario/excel?' + params.toString();
 }
 </script>

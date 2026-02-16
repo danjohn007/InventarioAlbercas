@@ -145,7 +145,7 @@
                     <div class="col-md-4">
                         <h6><i class="bi bi-download text-info"></i> Exportación</h6>
                         <p class="text-muted small">
-                            Exporta los reportes a PDF o Excel para compartir o archivar. (Función disponible próximamente)
+                            Exporta los reportes a PDF o Excel para compartir o archivar.
                         </p>
                     </div>
                 </div>

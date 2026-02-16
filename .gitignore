@@ -20,3 +20,7 @@ temp/
 .vscode/
 .idea/
 *.sublime-*
+
+# Composer
+/vendor/
+composer.lock

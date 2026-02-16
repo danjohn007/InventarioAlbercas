@@ -330,5 +330,48 @@ $router->get('/reportes/servicios', function() {
     $controller->servicios();
 });
 
+// Rutas de exportación de reportes
+$router->get('/reportes/inventario/pdf', function() {
+    Auth::requirePermission('reportes', 'exportar');
+    loadController('ReportesController');
+    $controller = new ReportesController();
+    $controller->exportarInventarioPDF();
+});
+
+$router->get('/reportes/inventario/excel', function() {
+    Auth::requirePermission('reportes', 'exportar');
+    loadController('ReportesController');
+    $controller = new ReportesController();
+    $controller->exportarInventarioExcel();
+});
+
+$router->get('/reportes/gastos/pdf', function() {
+    Auth::requirePermission('reportes', 'exportar');
+    loadController('ReportesController');
+    $controller = new ReportesController();
+    $controller->exportarGastosPDF();
+});
+
+$router->get('/reportes/gastos/excel', function() {
+    Auth::requirePermission('reportes', 'exportar');
+    loadController('ReportesController');
+    $controller = new ReportesController();
+    $controller->exportarGastosExcel();
+});
+
+$router->get('/reportes/servicios/pdf', function() {
+    Auth::requirePermission('reportes', 'exportar');
+    loadController('ReportesController');
+    $controller = new ReportesController();
+    $controller->exportarServiciosPDF();
+});
+
+$router->get('/reportes/servicios/excel', function() {
+    Auth::requirePermission('reportes', 'exportar');
+    loadController('ReportesController');
+    $controller = new ReportesController();
+    $controller->exportarServiciosExcel();
+});
+
 // Despachar la ruta
 $router->dispatch();
