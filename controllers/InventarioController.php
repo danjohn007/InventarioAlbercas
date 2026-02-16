@@ -108,7 +108,7 @@ class InventarioController {
             $costo_unitario = isset($_POST['costo_unitario']) ? (float)$_POST['costo_unitario'] : 0;
             $precio_venta = isset($_POST['precio_venta']) ? (float)$_POST['precio_venta'] : 0;
             $stock_minimo = isset($_POST['stock_minimo']) ? (float)$_POST['stock_minimo'] : 0;
-            $proveedor_id = isset($_POST['proveedor_id']) ? (int)$_POST['proveedor_id'] : null;
+            $proveedor_id = isset($_POST['proveedor_id']) && $_POST['proveedor_id'] !== '' ? (int)$_POST['proveedor_id'] : null;
             
             if (empty($nombre)) {
                 $errores[] = 'El nombre es requerido';
@@ -234,7 +234,7 @@ class InventarioController {
             $costo_unitario = isset($_POST['costo_unitario']) ? (float)$_POST['costo_unitario'] : 0;
             $precio_venta = isset($_POST['precio_venta']) ? (float)$_POST['precio_venta'] : 0;
             $stock_minimo = isset($_POST['stock_minimo']) ? (float)$_POST['stock_minimo'] : 0;
-            $proveedor_id = isset($_POST['proveedor_id']) ? (int)$_POST['proveedor_id'] : null;
+            $proveedor_id = isset($_POST['proveedor_id']) && $_POST['proveedor_id'] !== '' ? (int)$_POST['proveedor_id'] : null;
             $activo = isset($_POST['activo']) ? (int)$_POST['activo'] : 0;
             
             if (empty($codigo)) {
