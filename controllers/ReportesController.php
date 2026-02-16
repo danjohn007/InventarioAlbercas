@@ -56,7 +56,7 @@ class ReportesController {
         $sql = "SELECT p.*, c.nombre as categoria_nombre,
                 (p.stock * p.precio) as valor_total
                 FROM productos p
-                LEFT JOIN categorias c ON p.categoria_id = c.id
+                LEFT JOIN categorias_producto c ON p.categoria_id = c.id
                 $whereClause
                 $orderClause";
         
@@ -75,19 +75,19 @@ class ReportesController {
                 COUNT(p.id) as cantidad_productos,
                 SUM(p.stock) as total_stock,
                 SUM(p.stock * p.precio) as valor_total
-                FROM categorias c
+                FROM categorias_producto c
                 LEFT JOIN productos p ON c.id = p.categoria_id
                 GROUP BY c.id, c.nombre
                 ORDER BY valor_total DESC";
         
         $categorias_stats = $db->query($categoriaSql)->fetchAll();
         
-        $categoriasQuery = $db->query("SELECT * FROM categorias ORDER BY nombre");
+        $categoriasQuery = $db->query("SELECT * FROM categorias_producto ORDER BY nombre");
         $categorias = $categoriasQuery->fetchAll();
         
         $lowStockSql = "SELECT p.*, c.nombre as categoria_nombre
                 FROM productos p
-                LEFT JOIN categorias c ON p.categoria_id = c.id
+                LEFT JOIN categorias_producto c ON p.categoria_id = c.id
                 WHERE p.stock <= p.stock_minimo
                 ORDER BY (p.stock_minimo - p.stock) DESC
                 LIMIT 10";
@@ -150,7 +150,7 @@ class ReportesController {
                 COUNT(g.id) as cantidad_gastos,
                 SUM(g.monto) as total_monto,
                 AVG(g.monto) as promedio_monto
-                FROM gastos_categorias gc
+                FROM categorias_gasto gc
                 LEFT JOIN gastos g ON gc.id = g.categoria_id
                 WHERE 1=1 " . str_replace('g.categoria_id', 'gc.id', str_replace('WHERE 1=1', '', $whereClause)) . "
                 GROUP BY gc.id, gc.nombre
@@ -179,12 +179,12 @@ class ReportesController {
         
         $gastos_mensuales = $db->query($mensualSql, $params)->fetchAll();
         
-        $categoriasQuery = $db->query("SELECT * FROM gastos_categorias ORDER BY nombre");
+        $categoriasQuery = $db->query("SELECT * FROM categorias_gasto ORDER BY nombre");
         $categorias = $categoriasQuery->fetchAll();
         
         $topGastosSql = "SELECT g.*, gc.nombre as categoria_nombre, u.nombre as usuario_nombre
                 FROM gastos g
-                LEFT JOIN gastos_categorias gc ON g.categoria_id = gc.id
+                LEFT JOIN categorias_gasto gc ON g.categoria_id = gc.id
                 LEFT JOIN usuarios u ON g.usuario_id = u.id
                 $whereClause
                 ORDER BY g.monto DESC
