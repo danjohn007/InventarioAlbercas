@@ -36,16 +36,16 @@ class ReportesController {
         $orderClause = 'ORDER BY ';
         switch ($orden) {
             case 'stock_asc':
-                $orderClause .= 'p.stock ASC';
+                $orderClause .= 'p.stock_actual ASC';
                 break;
             case 'stock_desc':
-                $orderClause .= 'p.stock DESC';
+                $orderClause .= 'p.stock_actual DESC';
                 break;
             case 'precio_asc':
-                $orderClause .= 'p.precio ASC';
+                $orderClause .= 'p.precio_venta ASC';
                 break;
             case 'precio_desc':
-                $orderClause .= 'p.precio DESC';
+                $orderClause .= 'p.precio_venta DESC';
                 break;
             case 'nombre':
             default:
@@ -54,7 +54,7 @@ class ReportesController {
         }
         
         $sql = "SELECT p.*, c.nombre as categoria_nombre,
-                (p.stock * p.precio) as valor_total
+                (p.stock_actual * p.precio_venta) as valor_total
                 FROM productos p
                 LEFT JOIN categorias_producto c ON p.categoria_id = c.id
                 $whereClause
@@ -64,17 +64,17 @@ class ReportesController {
         
         $statsSql = "SELECT 
                 COUNT(*) as total_productos,
-                SUM(stock) as total_unidades,
-                SUM(stock * precio) as valor_total_inventario,
-                COUNT(CASE WHEN stock <= stock_minimo THEN 1 END) as productos_bajo_stock
+                SUM(stock_actual) as total_unidades,
+                SUM(stock_actual * precio_venta) as valor_total_inventario,
+                COUNT(CASE WHEN stock_actual <= stock_minimo THEN 1 END) as productos_bajo_stock
                 FROM productos p $whereClause";
         
         $stats = $db->query($statsSql, $params)->fetch();
         
         $categoriaSql = "SELECT c.nombre, 
                 COUNT(p.id) as cantidad_productos,
-                SUM(p.stock) as total_stock,
-                SUM(p.stock * p.precio) as valor_total
+                SUM(p.stock_actual) as total_stock,
+                SUM(p.stock_actual * p.precio_venta) as valor_total
                 FROM categorias_producto c
                 LEFT JOIN productos p ON c.id = p.categoria_id
                 GROUP BY c.id, c.nombre
@@ -88,8 +88,8 @@ class ReportesController {
         $lowStockSql = "SELECT p.*, c.nombre as categoria_nombre
                 FROM productos p
                 LEFT JOIN categorias_producto c ON p.categoria_id = c.id
-                WHERE p.stock <= p.stock_minimo
-                ORDER BY (p.stock_minimo - p.stock) DESC
+                WHERE p.stock_actual <= p.stock_minimo
+                ORDER BY (p.stock_minimo - p.stock_actual) DESC
                 LIMIT 10";
         
         $productos_bajo_stock = $db->query($lowStockSql)->fetchAll();
