@@ -215,6 +215,15 @@
                 </li>
                 <?php endif; ?>
                 
+                <?php if (Auth::can('ingresos', 'leer')): ?>
+                <li class="nav-item">
+                    <a href="<?php echo BASE_URL; ?>ingresos" class="nav-link <?php echo $activeMenu == 'ingresos' ? 'active' : ''; ?>">
+                        <i class="bi bi-currency-dollar"></i>
+                        <span>Ingresos</span>
+                    </a>
+                </li>
+                <?php endif; ?>
+                
                 <?php if (Auth::can('servicios', 'leer')): ?>
                 <li class="nav-item">
                     <a href="<?php echo BASE_URL; ?>servicios" class="nav-link <?php echo $activeMenu == 'servicios' ? 'active' : ''; ?>">
