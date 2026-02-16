@@ -373,5 +373,20 @@ $router->get('/reportes/servicios/excel', function() {
     $controller->exportarServiciosExcel();
 });
 
+// Rutas de configuraciones
+$router->get('/configuraciones', function() {
+    Auth::requirePermission('configuraciones', 'leer');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->index();
+});
+
+$router->post('/configuraciones/actualizar', function() {
+    Auth::requirePermission('configuraciones', 'actualizar');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->actualizar();
+});
+
 // Despachar la ruta
 $router->dispatch();

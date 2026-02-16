@@ -241,6 +241,15 @@
                     </a>
                 </li>
                 <?php endif; ?>
+                
+                <?php if (Auth::can('configuraciones', 'leer')): ?>
+                <li class="nav-item">
+                    <a href="<?php echo BASE_URL; ?>configuraciones" class="nav-link <?php echo $activeMenu == 'configuraciones' ? 'active' : ''; ?>">
+                        <i class="bi bi-gear"></i>
+                        <span>Configuraciones</span>
+                    </a>
+                </li>
+                <?php endif; ?>
             </ul>
         </nav>
     </aside>
