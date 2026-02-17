@@ -439,10 +439,12 @@ const mensualChart = new Chart(document.getElementById('mensualChart'), {
 });
 
 function exportarPDF() {
-    alert('Funcionalidad de exportación a PDF estará disponible próximamente.');
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = '<?php echo BASE_URL; ?>reportes/gastos/pdf?' + params.toString();
 }
 
 function exportarExcel() {
-    alert('Funcionalidad de exportación a Excel estará disponible próximamente.');
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = '<?php echo BASE_URL; ?>reportes/gastos/excel?' + params.toString();
 }
 </script>

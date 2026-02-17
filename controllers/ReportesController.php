@@ -36,16 +36,16 @@ class ReportesController {
         $orderClause = 'ORDER BY ';
         switch ($orden) {
             case 'stock_asc':
-                $orderClause .= 'p.stock ASC';
+                $orderClause .= 'p.stock_actual ASC';
                 break;
             case 'stock_desc':
-                $orderClause .= 'p.stock DESC';
+                $orderClause .= 'p.stock_actual DESC';
                 break;
             case 'precio_asc':
-                $orderClause .= 'p.precio ASC';
+                $orderClause .= 'p.precio_venta ASC';
                 break;
             case 'precio_desc':
-                $orderClause .= 'p.precio DESC';
+                $orderClause .= 'p.precio_venta DESC';
                 break;
             case 'nombre':
             default:
@@ -54,7 +54,7 @@ class ReportesController {
         }
         
         $sql = "SELECT p.*, c.nombre as categoria_nombre,
-                (p.stock * p.precio) as valor_total
+                (p.stock_actual * p.precio_venta) as valor_total
                 FROM productos p
                 LEFT JOIN categorias_producto c ON p.categoria_id = c.id
                 $whereClause
@@ -64,17 +64,17 @@ class ReportesController {
         
         $statsSql = "SELECT 
                 COUNT(*) as total_productos,
-                SUM(stock) as total_unidades,
-                SUM(stock * precio) as valor_total_inventario,
-                COUNT(CASE WHEN stock <= stock_minimo THEN 1 END) as productos_bajo_stock
+                SUM(stock_actual) as total_unidades,
+                SUM(stock_actual * precio_venta) as valor_total_inventario,
+                COUNT(CASE WHEN stock_actual <= stock_minimo THEN 1 END) as productos_bajo_stock
                 FROM productos p $whereClause";
         
         $stats = $db->query($statsSql, $params)->fetch();
         
         $categoriaSql = "SELECT c.nombre, 
                 COUNT(p.id) as cantidad_productos,
-                SUM(p.stock) as total_stock,
-                SUM(p.stock * p.precio) as valor_total
+                SUM(p.stock_actual) as total_stock,
+                SUM(p.stock_actual * p.precio_venta) as valor_total
                 FROM categorias_producto c
                 LEFT JOIN productos p ON c.id = p.categoria_id
                 GROUP BY c.id, c.nombre
@@ -88,8 +88,8 @@ class ReportesController {
         $lowStockSql = "SELECT p.*, c.nombre as categoria_nombre
                 FROM productos p
                 LEFT JOIN categorias_producto c ON p.categoria_id = c.id
-                WHERE p.stock <= p.stock_minimo
-                ORDER BY (p.stock_minimo - p.stock) DESC
+                WHERE p.stock_actual <= p.stock_minimo
+                ORDER BY (p.stock_minimo - p.stock_actual) DESC
                 LIMIT 10";
         
         $productos_bajo_stock = $db->query($lowStockSql)->fetchAll();
@@ -314,5 +314,418 @@ class ReportesController {
         $content = ob_get_clean();
         
         require_once __DIR__ . '/../views/layouts/main.php';
+    }
+    
+    // ============================================
+    // MÉTODOS DE EXPORTACIÓN
+    // ============================================
+    
+    /**
+     * Exportar Reporte de Inventario a PDF
+     */
+    public function exportarInventarioPDF() {
+        Auth::requirePermission('reportes', 'exportar');
+        
+        require_once __DIR__ . '/../utils/exports/PdfExporter.php';
+        
+        $db = Database::getInstance();
+        
+        // Obtener productos
+        $sql = "SELECT p.codigo, p.nombre, c.nombre as categoria, p.unidad_medida,
+                p.stock_actual, p.costo_unitario, p.precio_venta,
+                (p.stock_actual * p.precio_venta) as valor_total
+                FROM productos p
+                LEFT JOIN categorias_producto c ON p.categoria_id = c.id
+                WHERE p.activo = 1
+                ORDER BY p.nombre ASC";
+        
+        $productos = $db->query($sql)->fetchAll();
+        
+        // Estadísticas
+        $statsSql = "SELECT 
+                COUNT(*) as total_productos,
+                SUM(stock_actual) as total_unidades,
+                SUM(stock_actual * precio_venta) as valor_total_inventario
+                FROM productos WHERE activo = 1";
+        
+        $stats = $db->query($statsSql)->fetch();
+        
+        // Crear PDF
+        $pdf = new PdfExporter('Reporte de Inventario', 'L');
+        $pdf->setHeader(null, 'REPORTE DE INVENTARIO', 'Generado: ' . date('d/m/Y H:i'));
+        $pdf->setFooter();
+        $pdf->addPage();
+        
+        // Resumen
+        $pdf->setFont('helvetica', 'B', 12);
+        $pdf->cell(0, 10, 'Resumen General', 0, 1);
+        $pdf->setFont('helvetica', '', 10);
+        $pdf->cell(60, 6, 'Total de Productos:', 1, 0, 'L', true);
+        $pdf->cell(50, 6, number_format($stats['total_productos']), 1, 1);
+        $pdf->cell(60, 6, 'Total de Unidades:', 1, 0, 'L', true);
+        $pdf->cell(50, 6, number_format($stats['total_unidades'], 2), 1, 1);
+        $pdf->cell(60, 6, 'Valor Total del Inventario:', 1, 0, 'L', true);
+        $pdf->cell(50, 6, '$' . number_format($stats['valor_total_inventario'], 2), 1, 1);
+        $pdf->ln(10);
+        
+        // Tabla de productos
+        $pdf->setFont('helvetica', 'B', 11);
+        $pdf->cell(0, 10, 'Detalle de Productos', 0, 1);
+        
+        $headers = ['Código', 'Nombre', 'Categoría', 'U.M.', 'Stock', 'Costo Unit.', 'Precio', 'Valor Total'];
+        $widths = [25, 60, 35, 20, 20, 25, 25, 30];
+        
+        $data = [];
+        foreach ($productos as $p) {
+            $data[] = [
+                $p['codigo'],
+                substr($p['nombre'], 0, 40),
+                $p['categoria'],
+                $p['unidad_medida'],
+                number_format($p['stock_actual'], 2),
+                '$' . number_format($p['costo_unitario'], 2),
+                '$' . number_format($p['precio_venta'], 2),
+                '$' . number_format($p['valor_total'], 2)
+            ];
+        }
+        
+        $pdf->createTable($headers, $data, $widths);
+        
+        $pdf->download('reporte_inventario_' . date('Ymd') . '.pdf');
+    }
+    
+    /**
+     * Exportar Reporte de Inventario a Excel
+     */
+    public function exportarInventarioExcel() {
+        Auth::requirePermission('reportes', 'exportar');
+        
+        require_once __DIR__ . '/../utils/exports/ExcelExporter.php';
+        
+        $db = Database::getInstance();
+        
+        // Obtener productos
+        $sql = "SELECT p.codigo, p.nombre, c.nombre as categoria, p.unidad_medida,
+                p.stock_actual, p.costo_unitario, p.precio_venta,
+                (p.stock_actual * p.precio_venta) as valor_total
+                FROM productos p
+                LEFT JOIN categorias_producto c ON p.categoria_id = c.id
+                WHERE p.activo = 1
+                ORDER BY p.nombre ASC";
+        
+        $productos = $db->query($sql)->fetchAll();
+        
+        // Estadísticas
+        $statsSql = "SELECT 
+                COUNT(*) as total_productos,
+                SUM(stock_actual) as total_unidades,
+                SUM(stock_actual * precio_venta) as valor_total_inventario
+                FROM productos WHERE activo = 1";
+        
+        $stats = $db->query($statsSql)->fetch();
+        
+        // Crear Excel
+        $excel = new ExcelExporter('Inventario');
+        $excel->setReportTitle('REPORTE DE INVENTARIO', 'Generado: ' . date('d/m/Y H:i'));
+        
+        // Resumen
+        $excel->addSummary('Resumen General', [
+            'Total de Productos' => number_format($stats['total_productos']),
+            'Total de Unidades' => number_format($stats['total_unidades'], 2),
+            'Valor Total del Inventario' => '$' . number_format($stats['valor_total_inventario'], 2)
+        ]);
+        
+        // Tabla de productos
+        $headers = ['Código', 'Nombre', 'Categoría', 'Unidad Medida', 'Stock', 'Costo Unitario', 'Precio Venta', 'Valor Total'];
+        
+        $data = [];
+        foreach ($productos as $p) {
+            $data[] = [
+                $p['codigo'],
+                $p['nombre'],
+                $p['categoria'],
+                $p['unidad_medida'],
+                $p['stock_actual'],
+                $p['costo_unitario'],
+                $p['precio_venta'],
+                $p['valor_total']
+            ];
+        }
+        
+        $excel->createTable($headers, $data);
+        
+        $excel->download('reporte_inventario_' . date('Ymd') . '.xlsx');
+    }
+    
+    /**
+     * Exportar Reporte de Gastos a PDF
+     */
+    public function exportarGastosPDF() {
+        Auth::requirePermission('reportes', 'exportar');
+        
+        require_once __DIR__ . '/../utils/exports/PdfExporter.php';
+        
+        $db = Database::getInstance();
+        
+        $fecha_desde = isset($_GET['fecha_desde']) ? $_GET['fecha_desde'] : date('Y-m-01');
+        $fecha_hasta = isset($_GET['fecha_hasta']) ? $_GET['fecha_hasta'] : date('Y-m-t');
+        
+        $whereClause = 'WHERE g.fecha_gasto >= :fecha_desde AND g.fecha_gasto <= :fecha_hasta';
+        $params = ['fecha_desde' => $fecha_desde, 'fecha_hasta' => $fecha_hasta];
+        
+        // Obtener gastos
+        $sql = "SELECT g.fecha_gasto, g.concepto, cg.nombre as categoria, g.monto, g.forma_pago
+                FROM gastos g
+                INNER JOIN categorias_gasto cg ON g.categoria_id = cg.id
+                $whereClause
+                ORDER BY g.fecha_gasto DESC";
+        
+        $gastos = $db->query($sql, $params)->fetchAll();
+        
+        // Estadísticas
+        $statsSql = "SELECT COUNT(*) as total, SUM(monto) as total_monto
+                FROM gastos g $whereClause";
+        $stats = $db->query($statsSql, $params)->fetch();
+        
+        // Crear PDF
+        $pdf = new PdfExporter('Reporte de Gastos', 'L');
+        $pdf->setHeader(null, 'REPORTE DE GASTOS', 'Período: ' . date('d/m/Y', strtotime($fecha_desde)) . ' - ' . date('d/m/Y', strtotime($fecha_hasta)));
+        $pdf->setFooter();
+        $pdf->addPage();
+        
+        // Resumen
+        $pdf->setFont('helvetica', 'B', 12);
+        $pdf->cell(0, 10, 'Resumen General', 0, 1);
+        $pdf->setFont('helvetica', '', 10);
+        $pdf->cell(60, 6, 'Total de Gastos:', 1, 0, 'L', true);
+        $pdf->cell(50, 6, number_format($stats['total']), 1, 1);
+        $pdf->cell(60, 6, 'Monto Total:', 1, 0, 'L', true);
+        $pdf->cell(50, 6, '$' . number_format($stats['total_monto'], 2), 1, 1);
+        $pdf->ln(10);
+        
+        // Tabla
+        $pdf->setFont('helvetica', 'B', 11);
+        $pdf->cell(0, 10, 'Detalle de Gastos', 0, 1);
+        
+        $headers = ['Fecha', 'Concepto', 'Categoría', 'Forma de Pago', 'Monto'];
+        $widths = [30, 90, 50, 40, 30];
+        
+        $data = [];
+        foreach ($gastos as $g) {
+            $data[] = [
+                date('d/m/Y', strtotime($g['fecha_gasto'])),
+                substr($g['concepto'], 0, 60),
+                $g['categoria'],
+                ucfirst($g['forma_pago']),
+                '$' . number_format($g['monto'], 2)
+            ];
+        }
+        
+        $pdf->createTable($headers, $data, $widths);
+        
+        $pdf->download('reporte_gastos_' . date('Ymd') . '.pdf');
+    }
+    
+    /**
+     * Exportar Reporte de Gastos a Excel
+     */
+    public function exportarGastosExcel() {
+        Auth::requirePermission('reportes', 'exportar');
+        
+        require_once __DIR__ . '/../utils/exports/ExcelExporter.php';
+        
+        $db = Database::getInstance();
+        
+        $fecha_desde = isset($_GET['fecha_desde']) ? $_GET['fecha_desde'] : date('Y-m-01');
+        $fecha_hasta = isset($_GET['fecha_hasta']) ? $_GET['fecha_hasta'] : date('Y-m-t');
+        
+        $whereClause = 'WHERE g.fecha_gasto >= :fecha_desde AND g.fecha_gasto <= :fecha_hasta';
+        $params = ['fecha_desde' => $fecha_desde, 'fecha_hasta' => $fecha_hasta];
+        
+        // Obtener gastos
+        $sql = "SELECT g.fecha_gasto, g.concepto, cg.nombre as categoria, g.monto, g.forma_pago, g.descripcion
+                FROM gastos g
+                INNER JOIN categorias_gasto cg ON g.categoria_id = cg.id
+                $whereClause
+                ORDER BY g.fecha_gasto DESC";
+        
+        $gastos = $db->query($sql, $params)->fetchAll();
+        
+        // Estadísticas
+        $statsSql = "SELECT COUNT(*) as total, SUM(monto) as total_monto
+                FROM gastos g $whereClause";
+        $stats = $db->query($statsSql, $params)->fetch();
+        
+        // Crear Excel
+        $excel = new ExcelExporter('Gastos');
+        $excel->setReportTitle('REPORTE DE GASTOS', 'Período: ' . date('d/m/Y', strtotime($fecha_desde)) . ' - ' . date('d/m/Y', strtotime($fecha_hasta)));
+        
+        // Resumen
+        $excel->addSummary('Resumen General', [
+            'Total de Gastos' => number_format($stats['total']),
+            'Monto Total' => '$' . number_format($stats['total_monto'], 2)
+        ]);
+        
+        // Tabla
+        $headers = ['Fecha', 'Concepto', 'Categoría', 'Forma de Pago', 'Monto', 'Descripción'];
+        
+        $data = [];
+        foreach ($gastos as $g) {
+            $data[] = [
+                $g['fecha_gasto'],
+                $g['concepto'],
+                $g['categoria'],
+                ucfirst($g['forma_pago']),
+                $g['monto'],
+                $g['descripcion']
+            ];
+        }
+        
+        $excel->createTable($headers, $data);
+        
+        $excel->download('reporte_gastos_' . date('Ymd') . '.xlsx');
+    }
+    
+    /**
+     * Exportar Reporte de Servicios a PDF
+     */
+    public function exportarServiciosPDF() {
+        Auth::requirePermission('reportes', 'exportar');
+        
+        require_once __DIR__ . '/../utils/exports/PdfExporter.php';
+        
+        $db = Database::getInstance();
+        
+        $fecha_desde = isset($_GET['fecha_desde']) ? $_GET['fecha_desde'] : date('Y-m-01');
+        $fecha_hasta = isset($_GET['fecha_hasta']) ? $_GET['fecha_hasta'] : date('Y-m-t');
+        
+        $whereClause = 'WHERE s.fecha_programada >= :fecha_desde AND s.fecha_programada <= :fecha_hasta';
+        $params = ['fecha_desde' => $fecha_desde, 'fecha_hasta' => $fecha_hasta];
+        
+        // Obtener servicios
+        $sql = "SELECT s.fecha_programada, s.titulo, s.tipo_servicio, s.estado, 
+                CONCAT(c.nombre, ' ', IFNULL(c.apellidos, '')) as cliente,
+                CONCAT(u.nombre, ' ', u.apellidos) as tecnico,
+                s.total
+                FROM servicios s
+                INNER JOIN clientes c ON s.cliente_id = c.id
+                INNER JOIN usuarios u ON s.tecnico_id = u.id
+                $whereClause
+                ORDER BY s.fecha_programada DESC";
+        
+        $servicios = $db->query($sql, $params)->fetchAll();
+        
+        // Estadísticas
+        $statsSql = "SELECT COUNT(*) as total, SUM(total) as total_ingresos
+                FROM servicios s $whereClause";
+        $stats = $db->query($statsSql, $params)->fetch();
+        
+        // Crear PDF
+        $pdf = new PdfExporter('Reporte de Servicios', 'L');
+        $pdf->setHeader(null, 'REPORTE DE SERVICIOS', 'Período: ' . date('d/m/Y', strtotime($fecha_desde)) . ' - ' . date('d/m/Y', strtotime($fecha_hasta)));
+        $pdf->setFooter();
+        $pdf->addPage();
+        
+        // Resumen
+        $pdf->setFont('helvetica', 'B', 12);
+        $pdf->cell(0, 10, 'Resumen General', 0, 1);
+        $pdf->setFont('helvetica', '', 10);
+        $pdf->cell(60, 6, 'Total de Servicios:', 1, 0, 'L', true);
+        $pdf->cell(50, 6, number_format($stats['total']), 1, 1);
+        $pdf->cell(60, 6, 'Total Ingresos:', 1, 0, 'L', true);
+        $pdf->cell(50, 6, '$' . number_format($stats['total_ingresos'], 2), 1, 1);
+        $pdf->ln(10);
+        
+        // Tabla
+        $pdf->setFont('helvetica', 'B', 11);
+        $pdf->cell(0, 10, 'Detalle de Servicios', 0, 1);
+        
+        $headers = ['Fecha', 'Título', 'Tipo', 'Cliente', 'Técnico', 'Estado', 'Total'];
+        $widths = [25, 50, 30, 40, 40, 25, 30];
+        
+        $data = [];
+        foreach ($servicios as $s) {
+            $data[] = [
+                date('d/m/Y', strtotime($s['fecha_programada'])),
+                substr($s['titulo'], 0, 35),
+                ucfirst(str_replace('_', ' ', $s['tipo_servicio'])),
+                substr($s['cliente'], 0, 30),
+                substr($s['tecnico'], 0, 30),
+                ucfirst(str_replace('_', ' ', $s['estado'])),
+                '$' . number_format($s['total'], 2)
+            ];
+        }
+        
+        $pdf->createTable($headers, $data, $widths);
+        
+        $pdf->download('reporte_servicios_' . date('Ymd') . '.pdf');
+    }
+    
+    /**
+     * Exportar Reporte de Servicios a Excel
+     */
+    public function exportarServiciosExcel() {
+        Auth::requirePermission('reportes', 'exportar');
+        
+        require_once __DIR__ . '/../utils/exports/ExcelExporter.php';
+        
+        $db = Database::getInstance();
+        
+        $fecha_desde = isset($_GET['fecha_desde']) ? $_GET['fecha_desde'] : date('Y-m-01');
+        $fecha_hasta = isset($_GET['fecha_hasta']) ? $_GET['fecha_hasta'] : date('Y-m-t');
+        
+        $whereClause = 'WHERE s.fecha_programada >= :fecha_desde AND s.fecha_programada <= :fecha_hasta';
+        $params = ['fecha_desde' => $fecha_desde, 'fecha_hasta' => $fecha_hasta];
+        
+        // Obtener servicios
+        $sql = "SELECT s.fecha_programada, s.titulo, s.tipo_servicio, s.estado, s.descripcion,
+                CONCAT(c.nombre, ' ', IFNULL(c.apellidos, '')) as cliente,
+                CONCAT(u.nombre, ' ', u.apellidos) as tecnico,
+                s.costo_mano_obra, s.costo_materiales, s.otros_gastos, s.total
+                FROM servicios s
+                INNER JOIN clientes c ON s.cliente_id = c.id
+                INNER JOIN usuarios u ON s.tecnico_id = u.id
+                $whereClause
+                ORDER BY s.fecha_programada DESC";
+        
+        $servicios = $db->query($sql, $params)->fetchAll();
+        
+        // Estadísticas
+        $statsSql = "SELECT COUNT(*) as total, SUM(total) as total_ingresos
+                FROM servicios s $whereClause";
+        $stats = $db->query($statsSql, $params)->fetch();
+        
+        // Crear Excel
+        $excel = new ExcelExporter('Servicios');
+        $excel->setReportTitle('REPORTE DE SERVICIOS', 'Período: ' . date('d/m/Y', strtotime($fecha_desde)) . ' - ' . date('d/m/Y', strtotime($fecha_hasta)));
+        
+        // Resumen
+        $excel->addSummary('Resumen General', [
+            'Total de Servicios' => number_format($stats['total']),
+            'Total Ingresos' => '$' . number_format($stats['total_ingresos'], 2)
+        ]);
+        
+        // Tabla
+        $headers = ['Fecha', 'Título', 'Tipo', 'Cliente', 'Técnico', 'Estado', 'Mano Obra', 'Materiales', 'Otros', 'Total'];
+        
+        $data = [];
+        foreach ($servicios as $s) {
+            $data[] = [
+                $s['fecha_programada'],
+                $s['titulo'],
+                ucfirst(str_replace('_', ' ', $s['tipo_servicio'])),
+                $s['cliente'],
+                $s['tecnico'],
+                ucfirst(str_replace('_', ' ', $s['estado'])),
+                $s['costo_mano_obra'],
+                $s['costo_materiales'],
+                $s['otros_gastos'],
+                $s['total']
+            ];
+        }
+        
+        $excel->createTable($headers, $data);
+        
+        $excel->download('reporte_servicios_' . date('Ymd') . '.xlsx');
     }
 }

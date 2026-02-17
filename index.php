@@ -330,5 +330,106 @@ $router->get('/reportes/servicios', function() {
     $controller->servicios();
 });
 
+// Rutas de exportación de reportes
+$router->get('/reportes/inventario/pdf', function() {
+    Auth::requirePermission('reportes', 'exportar');
+    loadController('ReportesController');
+    $controller = new ReportesController();
+    $controller->exportarInventarioPDF();
+});
+
+$router->get('/reportes/inventario/excel', function() {
+    Auth::requirePermission('reportes', 'exportar');
+    loadController('ReportesController');
+    $controller = new ReportesController();
+    $controller->exportarInventarioExcel();
+});
+
+$router->get('/reportes/gastos/pdf', function() {
+    Auth::requirePermission('reportes', 'exportar');
+    loadController('ReportesController');
+    $controller = new ReportesController();
+    $controller->exportarGastosPDF();
+});
+
+$router->get('/reportes/gastos/excel', function() {
+    Auth::requirePermission('reportes', 'exportar');
+    loadController('ReportesController');
+    $controller = new ReportesController();
+    $controller->exportarGastosExcel();
+});
+
+$router->get('/reportes/servicios/pdf', function() {
+    Auth::requirePermission('reportes', 'exportar');
+    loadController('ReportesController');
+    $controller = new ReportesController();
+    $controller->exportarServiciosPDF();
+});
+
+$router->get('/reportes/servicios/excel', function() {
+    Auth::requirePermission('reportes', 'exportar');
+    loadController('ReportesController');
+    $controller = new ReportesController();
+    $controller->exportarServiciosExcel();
+});
+
+// Rutas de configuraciones
+$router->get('/configuraciones', function() {
+    Auth::requirePermission('configuraciones', 'leer');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->index();
+});
+
+$router->post('/configuraciones/actualizar', function() {
+    Auth::requirePermission('configuraciones', 'actualizar');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->actualizar();
+});
+
+// Rutas de ingresos
+$router->get('/ingresos', function() {
+    Auth::requirePermission('ingresos', 'leer');
+    loadController('IngresosController');
+    $controller = new IngresosController();
+    $controller->index();
+});
+
+$router->get('/ingresos/crear', function() {
+    Auth::requirePermission('ingresos', 'crear');
+    loadController('IngresosController');
+    $controller = new IngresosController();
+    $controller->crear();
+});
+
+$router->post('/ingresos/guardar', function() {
+    Auth::requirePermission('ingresos', 'crear');
+    loadController('IngresosController');
+    $controller = new IngresosController();
+    $controller->guardar();
+});
+
+$router->get('/ingresos/editar/([0-9]+)', function($id) {
+    Auth::requirePermission('ingresos', 'actualizar');
+    loadController('IngresosController');
+    $controller = new IngresosController();
+    $controller->editar($id);
+});
+
+$router->post('/ingresos/actualizar', function() {
+    Auth::requirePermission('ingresos', 'actualizar');
+    loadController('IngresosController');
+    $controller = new IngresosController();
+    $controller->actualizar();
+});
+
+$router->get('/ingresos/eliminar/([0-9]+)', function($id) {
+    Auth::requirePermission('ingresos', 'eliminar');
+    loadController('IngresosController');
+    $controller = new IngresosController();
+    $controller->eliminar($id);
+});
+
 // Despachar la ruta
 $router->dispatch();

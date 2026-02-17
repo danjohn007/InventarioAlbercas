@@ -215,6 +215,15 @@
                 </li>
                 <?php endif; ?>
                 
+                <?php if (Auth::can('ingresos', 'leer')): ?>
+                <li class="nav-item">
+                    <a href="<?php echo BASE_URL; ?>ingresos" class="nav-link <?php echo $activeMenu == 'ingresos' ? 'active' : ''; ?>">
+                        <i class="bi bi-currency-dollar"></i>
+                        <span>Ingresos</span>
+                    </a>
+                </li>
+                <?php endif; ?>
+                
                 <?php if (Auth::can('servicios', 'leer')): ?>
                 <li class="nav-item">
                     <a href="<?php echo BASE_URL; ?>servicios" class="nav-link <?php echo $activeMenu == 'servicios' ? 'active' : ''; ?>">
@@ -238,6 +247,15 @@
                     <a href="<?php echo BASE_URL; ?>reportes" class="nav-link <?php echo $activeMenu == 'reportes' ? 'active' : ''; ?>">
                         <i class="bi bi-file-earmark-bar-graph"></i>
                         <span>Reportes</span>
+                    </a>
+                </li>
+                <?php endif; ?>
+                
+                <?php if (Auth::can('configuraciones', 'leer')): ?>
+                <li class="nav-item">
+                    <a href="<?php echo BASE_URL; ?>configuraciones" class="nav-link <?php echo $activeMenu == 'configuraciones' ? 'active' : ''; ?>">
+                        <i class="bi bi-gear"></i>
+                        <span>Configuraciones</span>
                     </a>
                 </li>
                 <?php endif; ?>
