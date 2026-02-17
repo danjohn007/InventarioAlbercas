@@ -54,6 +54,7 @@ class ReportesController {
         }
         
         $sql = "SELECT p.*, c.nombre as categoria_nombre,
+                p.stock_actual as stock, p.precio_venta as precio,
                 (p.stock_actual * p.precio_venta) as valor_total
                 FROM productos p
                 LEFT JOIN categorias_producto c ON p.categoria_id = c.id
@@ -85,7 +86,8 @@ class ReportesController {
         $categoriasQuery = $db->query("SELECT * FROM categorias_producto ORDER BY nombre");
         $categorias = $categoriasQuery->fetchAll();
         
-        $lowStockSql = "SELECT p.*, c.nombre as categoria_nombre
+        $lowStockSql = "SELECT p.*, c.nombre as categoria_nombre,
+                p.stock_actual as stock
                 FROM productos p
                 LEFT JOIN categorias_producto c ON p.categoria_id = c.id
                 WHERE p.stock_actual <= p.stock_minimo
