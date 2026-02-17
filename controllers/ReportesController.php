@@ -330,25 +330,35 @@ class ReportesController {
         
         $db = Database::getInstance();
         
+        // Obtener productos con filtros si existen
+        $categoria = isset($_GET['categoria']) ? (int)$_GET['categoria'] : 0;
+        $whereClause = 'WHERE 1=1';
+        $params = [];
+        
+        if ($categoria > 0) {
+            $whereClause .= " AND p.categoria_id = :categoria";
+            $params['categoria'] = $categoria;
+        }
+        
         // Obtener productos
-        $sql = "SELECT p.codigo, p.nombre, c.nombre as categoria, p.unidad_medida,
-                p.stock_actual, p.costo_unitario, p.precio_venta,
+        $sql = "SELECT p.sku, p.nombre, c.nombre as categoria, 
+                p.stock_actual as stock, p.precio_venta as precio,
                 (p.stock_actual * p.precio_venta) as valor_total
                 FROM productos p
                 LEFT JOIN categorias_producto c ON p.categoria_id = c.id
-                WHERE p.activo = 1
+                $whereClause
                 ORDER BY p.nombre ASC";
         
-        $productos = $db->query($sql)->fetchAll();
+        $productos = $db->query($sql, $params)->fetchAll();
         
         // Estadísticas
         $statsSql = "SELECT 
                 COUNT(*) as total_productos,
                 SUM(stock_actual) as total_unidades,
                 SUM(stock_actual * precio_venta) as valor_total_inventario
-                FROM productos WHERE activo = 1";
+                FROM productos p $whereClause";
         
-        $stats = $db->query($statsSql)->fetch();
+        $stats = $db->query($statsSql, $params)->fetch();
         
         // Crear PDF
         $pdf = new PdfExporter('Reporte de Inventario', 'L');
@@ -372,19 +382,17 @@ class ReportesController {
         $pdf->setFont('helvetica', 'B', 11);
         $pdf->cell(0, 10, 'Detalle de Productos', 0, 1);
         
-        $headers = ['Código', 'Nombre', 'Categoría', 'U.M.', 'Stock', 'Costo Unit.', 'Precio', 'Valor Total'];
-        $widths = [25, 60, 35, 20, 20, 25, 25, 30];
+        $headers = ['SKU', 'Nombre', 'Categoría', 'Stock', 'Precio Unit.', 'Valor Total'];
+        $widths = [30, 80, 50, 25, 30, 35];
         
         $data = [];
         foreach ($productos as $p) {
             $data[] = [
-                $p['codigo'],
-                substr($p['nombre'], 0, 40),
-                $p['categoria'],
-                $p['unidad_medida'],
-                number_format($p['stock_actual'], 2),
-                '$' . number_format($p['costo_unitario'], 2),
-                '$' . number_format($p['precio_venta'], 2),
+                $p['sku'] ?? '-',
+                substr($p['nombre'], 0, 50),
+                $p['categoria'] ?? 'Sin categoría',
+                number_format($p['stock'], 2),
+                '$' . number_format($p['precio'], 2),
                 '$' . number_format($p['valor_total'], 2)
             ];
         }
@@ -404,25 +412,35 @@ class ReportesController {
         
         $db = Database::getInstance();
         
+        // Obtener productos con filtros si existen
+        $categoria = isset($_GET['categoria']) ? (int)$_GET['categoria'] : 0;
+        $whereClause = 'WHERE 1=1';
+        $params = [];
+        
+        if ($categoria > 0) {
+            $whereClause .= " AND p.categoria_id = :categoria";
+            $params['categoria'] = $categoria;
+        }
+        
         // Obtener productos
-        $sql = "SELECT p.codigo, p.nombre, c.nombre as categoria, p.unidad_medida,
-                p.stock_actual, p.costo_unitario, p.precio_venta,
+        $sql = "SELECT p.sku, p.nombre, c.nombre as categoria, 
+                p.stock_actual as stock, p.precio_venta as precio,
                 (p.stock_actual * p.precio_venta) as valor_total
                 FROM productos p
                 LEFT JOIN categorias_producto c ON p.categoria_id = c.id
-                WHERE p.activo = 1
+                $whereClause
                 ORDER BY p.nombre ASC";
         
-        $productos = $db->query($sql)->fetchAll();
+        $productos = $db->query($sql, $params)->fetchAll();
         
         // Estadísticas
         $statsSql = "SELECT 
                 COUNT(*) as total_productos,
                 SUM(stock_actual) as total_unidades,
                 SUM(stock_actual * precio_venta) as valor_total_inventario
-                FROM productos WHERE activo = 1";
+                FROM productos p $whereClause";
         
-        $stats = $db->query($statsSql)->fetch();
+        $stats = $db->query($statsSql, $params)->fetch();
         
         // Crear Excel
         $excel = new ExcelExporter('Inventario');
@@ -436,18 +454,16 @@ class ReportesController {
         ]);
         
         // Tabla de productos
-        $headers = ['Código', 'Nombre', 'Categoría', 'Unidad Medida', 'Stock', 'Costo Unitario', 'Precio Venta', 'Valor Total'];
+        $headers = ['SKU', 'Nombre', 'Categoría', 'Stock', 'Precio Unitario', 'Valor Total'];
         
         $data = [];
         foreach ($productos as $p) {
             $data[] = [
-                $p['codigo'],
+                $p['sku'] ?? '-',
                 $p['nombre'],
-                $p['categoria'],
-                $p['unidad_medida'],
-                $p['stock_actual'],
-                $p['costo_unitario'],
-                $p['precio_venta'],
+                $p['categoria'] ?? 'Sin categoría',
+                $p['stock'],
+                $p['precio'],
                 $p['valor_total']
             ];
         }
