@@ -143,39 +143,20 @@ class DashboardController {
     
     private function getIngresosVsGastos() {
         $sql = "SELECT 
-                    DATE_FORMAT(COALESCE(i.mes, g.mes), '%Y-%m') as mes,
-                    COALESCE(i.total_ingresos, 0) as ingresos,
-                    COALESCE(g.total_gastos, 0) as gastos,
-                    COALESCE(i.total_ingresos, 0) - COALESCE(g.total_gastos, 0) as balance
-                FROM 
-                    (SELECT DATE_FORMAT(fecha_ingreso, '%Y-%m') as mes, SUM(monto) as total_ingresos
-                     FROM ingresos 
-                     WHERE fecha_ingreso >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
-                     GROUP BY DATE_FORMAT(fecha_ingreso, '%Y-%m')) i
-                LEFT JOIN 
-                    (SELECT DATE_FORMAT(fecha_gasto, '%Y-%m') as mes, SUM(monto) as total_gastos
-                     FROM gastos 
-                     WHERE fecha_gasto >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
-                     GROUP BY DATE_FORMAT(fecha_gasto, '%Y-%m')) g 
-                ON i.mes = g.mes
-                UNION
-                SELECT 
-                    DATE_FORMAT(COALESCE(i.mes, g.mes), '%Y-%m') as mes,
-                    COALESCE(i.total_ingresos, 0) as ingresos,
-                    COALESCE(g.total_gastos, 0) as gastos,
-                    COALESCE(i.total_ingresos, 0) - COALESCE(g.total_gastos, 0) as balance
-                FROM 
-                    (SELECT DATE_FORMAT(fecha_ingreso, '%Y-%m') as mes, SUM(monto) as total_ingresos
-                     FROM ingresos 
-                     WHERE fecha_ingreso >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
-                     GROUP BY DATE_FORMAT(fecha_ingreso, '%Y-%m')) i
-                RIGHT JOIN 
-                    (SELECT DATE_FORMAT(fecha_gasto, '%Y-%m') as mes, SUM(monto) as total_gastos
-                     FROM gastos 
-                     WHERE fecha_gasto >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
-                     GROUP BY DATE_FORMAT(fecha_gasto, '%Y-%m')) g 
-                ON i.mes = g.mes
-                WHERE i.mes IS NULL
+                    mes,
+                    COALESCE(SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END), 0) as ingresos,
+                    COALESCE(SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END), 0) as gastos,
+                    COALESCE(SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END), 0) as balance
+                FROM (
+                    SELECT DATE_FORMAT(fecha_ingreso, '%Y-%m') as mes, monto, 'ingreso' as tipo
+                    FROM ingresos
+                    WHERE fecha_ingreso >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+                    UNION ALL
+                    SELECT DATE_FORMAT(fecha_gasto, '%Y-%m') as mes, monto, 'gasto' as tipo
+                    FROM gastos
+                    WHERE fecha_gasto >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+                ) combined
+                GROUP BY mes
                 ORDER BY mes";
         $stmt = $this->db->query($sql);
         return $stmt->fetchAll();

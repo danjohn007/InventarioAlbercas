@@ -74,14 +74,14 @@
                     <div class="col-md-4">
                         <div class="p-3">
                             <i class="bi bi-arrow-up-circle text-success" style="font-size: 2.5rem;"></i>
-                            <h5 class="mt-2">Ingresos</h5>
+                            <h5 class="mt-2">Ingresos del Mes</h5>
                             <h3 class="text-success">$<?php echo number_format($stats['ingresos_mes'], 2); ?></h3>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="p-3">
                             <i class="bi bi-arrow-down-circle text-danger" style="font-size: 2.5rem;"></i>
-                            <h5 class="mt-2">Gastos</h5>
+                            <h5 class="mt-2">Gastos del Mes</h5>
                             <h3 class="text-danger">$<?php echo number_format($stats['gastos_mes'], 2); ?></h3>
                         </div>
                     </div>

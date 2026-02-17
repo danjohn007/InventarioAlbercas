@@ -166,13 +166,32 @@ class ConfiguracionController {
                 throw new Exception('Formato de backup inválido');
             }
             
-            // Restaurar configuraciones
+            // Verificar la versión del backup
+            if (isset($backup['version']) && $backup['version'] !== '1.0') {
+                throw new Exception('Versión de backup no compatible');
+            }
+            
+            // Obtener claves de configuración válidas
+            $validKeys = $db->query("SELECT clave FROM configuraciones")->fetchAll();
+            $validKeysList = array_column($validKeys, 'clave');
+            
+            // Validar y restaurar configuraciones
+            $updated = 0;
             foreach ($backup['configuraciones'] as $config) {
+                // Validar que la clave existe
+                if (!in_array($config['clave'], $validKeysList)) {
+                    continue; // Ignorar claves no válidas
+                }
+                
+                // Sanitizar el valor
+                $valor = is_string($config['valor']) ? htmlspecialchars($config['valor'], ENT_QUOTES, 'UTF-8') : $config['valor'];
+                
                 $sql = "UPDATE configuraciones SET valor = :valor WHERE clave = :clave";
                 $db->query($sql, [
-                    'valor' => $config['valor'],
+                    'valor' => $valor,
                     'clave' => $config['clave']
                 ]);
+                $updated++;
             }
             
             // Auditoría
@@ -180,12 +199,12 @@ class ConfiguracionController {
             $db->query("INSERT INTO auditoria (usuario_id, accion, tabla, detalles, ip_address, user_agent) 
                         VALUES (:usuario_id, 'importar', 'configuraciones', :detalles, :ip, :ua)", [
                 'usuario_id' => $usuario['id'],
-                'detalles' => 'Configuraciones restauradas desde backup',
+                'detalles' => 'Configuraciones restauradas desde backup (' . $updated . ' configuraciones actualizadas)',
                 'ip' => $_SERVER['REMOTE_ADDR'],
                 'ua' => $_SERVER['HTTP_USER_AGENT']
             ]);
             
-            $_SESSION['success'] = 'Configuraciones restauradas correctamente';
+            $_SESSION['success'] = 'Configuraciones restauradas correctamente (' . $updated . ' configuraciones actualizadas)';
             
         } catch (Exception $e) {
             $_SESSION['error'] = 'Error al restaurar configuraciones: ' . $e->getMessage();
