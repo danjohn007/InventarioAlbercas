@@ -37,6 +37,22 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
+                        <h6 class="text-muted mb-2">Ingresos del Mes</h6>
+                        <h2 class="mb-0">$<?php echo number_format($stats['ingresos_mes'], 2); ?></h2>
+                    </div>
+                    <div class="fs-1 text-success">
+                        <i class="bi bi-graph-up-arrow"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
                         <h6 class="text-muted mb-2">Gastos del Mes</h6>
                         <h2 class="mb-0">$<?php echo number_format($stats['gastos_mes'], 2); ?></h2>
                     </div>
@@ -47,7 +63,47 @@
             </div>
         </div>
     </div>
-    
+</div>
+
+<!-- Balance del mes -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="p-3">
+                            <i class="bi bi-arrow-up-circle text-success" style="font-size: 2.5rem;"></i>
+                            <h5 class="mt-2">Ingresos del Mes</h5>
+                            <h3 class="text-success">$<?php echo number_format($stats['ingresos_mes'], 2); ?></h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3">
+                            <i class="bi bi-arrow-down-circle text-danger" style="font-size: 2.5rem;"></i>
+                            <h5 class="mt-2">Gastos del Mes</h5>
+                            <h3 class="text-danger">$<?php echo number_format($stats['gastos_mes'], 2); ?></h3>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3">
+                            <?php 
+                            $balance = $stats['ingresos_mes'] - $stats['gastos_mes'];
+                            $balance_color = $balance >= 0 ? 'success' : 'danger';
+                            $balance_icon = $balance >= 0 ? 'bi-check-circle' : 'bi-x-circle';
+                            ?>
+                            <i class="bi <?php echo $balance_icon; ?> text-<?php echo $balance_color; ?>" style="font-size: 2.5rem;"></i>
+                            <h5 class="mt-2">Balance</h5>
+                            <h3 class="text-<?php echo $balance_color; ?>">$<?php echo number_format($balance, 2); ?></h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
     <div class="col-md-3 mb-4">
         <div class="card stat-card">
             <div class="card-body">
@@ -78,14 +134,40 @@
         </div>
     </div>
     
+    <!-- Gráfica de Ingresos vs Gastos -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-bar-chart me-2"></i>Ingresos vs Gastos (6 meses)
+            </div>
+            <div class="card-body">
+                <canvas id="ingresosVsGastosChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Gráfica de tendencia de ingresos -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-graph-up me-2"></i>Tendencia de Ingresos (6 meses)
+            </div>
+            <div class="card-body">
+                <canvas id="ingresosChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    
     <!-- Gráfica de tendencia de gastos -->
     <div class="col-md-6 mb-4">
         <div class="card">
             <div class="card-header">
-                <i class="bi bi-graph-up me-2"></i>Tendencia de Gastos (6 meses)
+                <i class="bi bi-graph-down me-2"></i>Tendencia de Gastos (6 meses)
             </div>
             <div class="card-body">
-                <canvas id="ventasChart" height="250"></canvas>
+                <canvas id="gastosChart2" height="250"></canvas>
             </div>
         </div>
     </div>
@@ -232,6 +314,13 @@ $gastosData = json_encode(array_column($gastosChart, 'total'));
 $ventasLabels = json_encode(array_column($ventasMes, 'mes'));
 $ventasData = json_encode(array_column($ventasMes, 'total'));
 
+$ingresosLabels = json_encode(array_column($ingresosMes, 'mes'));
+$ingresosData = json_encode(array_column($ingresosMes, 'total'));
+
+$ingresosVsGastosLabels = json_encode(array_column($ingresosVsGastos, 'mes'));
+$ingresosVsGastosIngresos = json_encode(array_column($ingresosVsGastos, 'ingresos'));
+$ingresosVsGastosGastos = json_encode(array_column($ingresosVsGastos, 'gastos'));
+
 $extraJs = <<<JS
 <script>
 // Gráfica de gastos por categoría
@@ -263,17 +352,68 @@ new Chart(gastosCtx, {
     }
 });
 
-// Gráfica de tendencia de ventas
-const ventasCtx = document.getElementById('ventasChart').getContext('2d');
-new Chart(ventasCtx, {
+// Gráfica de Ingresos vs Gastos
+const ingresosVsGastosCtx = document.getElementById('ingresosVsGastosChart').getContext('2d');
+new Chart(ingresosVsGastosCtx, {
+    type: 'bar',
+    data: {
+        labels: $ingresosVsGastosLabels,
+        datasets: [
+            {
+                label: 'Ingresos',
+                data: $ingresosVsGastosIngresos,
+                backgroundColor: 'rgba(25, 135, 84, 0.7)',
+                borderColor: 'rgba(25, 135, 84, 1)',
+                borderWidth: 2
+            },
+            {
+                label: 'Gastos',
+                data: $ingresosVsGastosGastos,
+                backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                borderColor: 'rgba(220, 53, 69, 1)',
+                borderWidth: 2
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top'
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.dataset.label + ': $' + context.parsed.y.toLocaleString('es-MX', {minimumFractionDigits: 2});
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '$' + value.toLocaleString('es-MX');
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Gráfica de tendencia de ingresos
+const ingresosCtx = document.getElementById('ingresosChart').getContext('2d');
+new Chart(ingresosCtx, {
     type: 'line',
     data: {
-        labels: $ventasLabels,
+        labels: $ingresosLabels,
         datasets: [{
-            label: 'Gastos',
-            data: $ventasData,
-            borderColor: 'rgba(102, 126, 234, 1)',
-            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            label: 'Ingresos',
+            data: $ingresosData,
+            borderColor: 'rgba(25, 135, 84, 1)',
+            backgroundColor: 'rgba(25, 135, 84, 0.1)',
             tension: 0.4,
             fill: true
         }]
@@ -291,7 +431,43 @@ new Chart(ventasCtx, {
                 beginAtZero: true,
                 ticks: {
                     callback: function(value) {
-                        return '$' + value.toLocaleString();
+                        return '$' + value.toLocaleString('es-MX');
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Gráfica de tendencia de gastos
+const gastosCtx2 = document.getElementById('gastosChart2').getContext('2d');
+new Chart(gastosCtx2, {
+    type: 'line',
+    data: {
+        labels: $ventasLabels,
+        datasets: [{
+            label: 'Gastos',
+            data: $ventasData,
+            borderColor: 'rgba(220, 53, 69, 1)',
+            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '$' + value.toLocaleString('es-MX');
                     }
                 }
             }

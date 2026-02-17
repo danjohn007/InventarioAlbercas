@@ -388,6 +388,27 @@ $router->post('/configuraciones/actualizar', function() {
     $controller->actualizar();
 });
 
+$router->get('/configuraciones/exportar', function() {
+    Auth::requirePermission('configuraciones', 'leer');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->exportar();
+});
+
+$router->post('/configuraciones/importar', function() {
+    Auth::requirePermission('configuraciones', 'actualizar');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->importar();
+});
+
+$router->post('/configuraciones/restablecer', function() {
+    Auth::requirePermission('configuraciones', 'actualizar');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->restablecer();
+});
+
 // Rutas de ingresos
 $router->get('/ingresos', function() {
     Auth::requirePermission('ingresos', 'leer');

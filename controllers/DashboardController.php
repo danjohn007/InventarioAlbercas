@@ -26,6 +26,8 @@ class DashboardController {
         // Obtener datos para gráficas
         $gastosChart = $this->getGastosPorCategoria();
         $ventasMes = $this->getVentasPorMes();
+        $ingresosMes = $this->getIngresosPorMes();
+        $ingresosVsGastos = $this->getIngresosVsGastos();
         
         // Renderizar vista
         $pageTitle = 'Dashboard';
@@ -52,6 +54,10 @@ class DashboardController {
         // Gastos del mes
         $stmt = $this->db->query("SELECT SUM(monto) as total FROM gastos WHERE MONTH(fecha_gasto) = MONTH(CURRENT_DATE()) AND YEAR(fecha_gasto) = YEAR(CURRENT_DATE())");
         $stats['gastos_mes'] = $stmt->fetch()['total'] ?? 0;
+        
+        // Ingresos del mes
+        $stmt = $this->db->query("SELECT SUM(monto) as total FROM ingresos WHERE MONTH(fecha_ingreso) = MONTH(CURRENT_DATE()) AND YEAR(fecha_ingreso) = YEAR(CURRENT_DATE())");
+        $stats['ingresos_mes'] = $stmt->fetch()['total'] ?? 0;
         
         // Servicios activos
         $stmt = $this->db->query("SELECT COUNT(*) as total FROM servicios WHERE estado IN ('pendiente', 'en_proceso')");
@@ -118,6 +124,39 @@ class DashboardController {
                 FROM gastos
                 WHERE fecha_gasto >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
                 GROUP BY DATE_FORMAT(fecha_gasto, '%Y-%m')
+                ORDER BY mes";
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll();
+    }
+    
+    private function getIngresosPorMes() {
+        $sql = "SELECT 
+                    DATE_FORMAT(fecha_ingreso, '%Y-%m') as mes,
+                    SUM(monto) as total
+                FROM ingresos
+                WHERE fecha_ingreso >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+                GROUP BY DATE_FORMAT(fecha_ingreso, '%Y-%m')
+                ORDER BY mes";
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll();
+    }
+    
+    private function getIngresosVsGastos() {
+        $sql = "SELECT 
+                    mes,
+                    COALESCE(SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END), 0) as ingresos,
+                    COALESCE(SUM(CASE WHEN tipo = 'gasto' THEN monto ELSE 0 END), 0) as gastos,
+                    COALESCE(SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE -monto END), 0) as balance
+                FROM (
+                    SELECT DATE_FORMAT(fecha_ingreso, '%Y-%m') as mes, monto, 'ingreso' as tipo
+                    FROM ingresos
+                    WHERE fecha_ingreso >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+                    UNION ALL
+                    SELECT DATE_FORMAT(fecha_gasto, '%Y-%m') as mes, monto, 'gasto' as tipo
+                    FROM gastos
+                    WHERE fecha_gasto >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+                ) combined
+                GROUP BY mes
                 ORDER BY mes";
         $stmt = $this->db->query($sql);
         return $stmt->fetchAll();
