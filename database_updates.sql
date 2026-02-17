@@ -93,14 +93,16 @@ UPDATE roles
 SET permisos = JSON_SET(
     permisos,
     '$.ingresos', JSON_ARRAY('crear', 'leer', 'actualizar', 'eliminar'),
-    '$.configuraciones', JSON_ARRAY('leer', 'actualizar')
+    '$.configuraciones', JSON_ARRAY('leer', 'actualizar'),
+    '$.reportes', JSON_ARRAY('leer', 'exportar')
 )
 WHERE nombre = 'Administrador';
 
 UPDATE roles 
 SET permisos = JSON_SET(
     permisos,
-    '$.ingresos', JSON_ARRAY('crear', 'leer', 'actualizar')
+    '$.ingresos', JSON_ARRAY('crear', 'leer', 'actualizar'),
+    '$.reportes', JSON_ARRAY('leer', 'exportar')
 )
 WHERE nombre = 'Supervisor';
 
