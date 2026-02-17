@@ -216,12 +216,12 @@ class ReportesController {
         $params = [];
         
         if (!empty($fecha_desde)) {
-            $whereClause .= " AND s.fecha_servicio >= :fecha_desde";
+            $whereClause .= " AND s.fecha_programada >= :fecha_desde";
             $params['fecha_desde'] = $fecha_desde;
         }
         
         if (!empty($fecha_hasta)) {
-            $whereClause .= " AND s.fecha_servicio <= :fecha_hasta";
+            $whereClause .= " AND s.fecha_programada <= :fecha_hasta";
             $params['fecha_hasta'] = $fecha_hasta;
         }
         
@@ -237,8 +237,8 @@ class ReportesController {
         
         $statsSql = "SELECT 
                 COUNT(*) as total_servicios,
-                SUM(costo_total) as total_ingresos,
-                AVG(costo_total) as promedio_costo,
+                SUM(total) as total_ingresos,
+                AVG(total) as promedio_costo,
                 COUNT(CASE WHEN estado = 'pendiente' THEN 1 END) as servicios_pendientes,
                 COUNT(CASE WHEN estado = 'en_proceso' THEN 1 END) as servicios_en_proceso,
                 COUNT(CASE WHEN estado = 'completado' THEN 1 END) as servicios_completados,
@@ -249,8 +249,8 @@ class ReportesController {
         
         $tecnicosSql = "SELECT u.id, u.nombre,
                 COUNT(s.id) as total_servicios,
-                SUM(s.costo_total) as total_ingresos,
-                AVG(s.costo_total) as promedio_costo,
+                SUM(s.total) as total_ingresos,
+                AVG(s.total) as promedio_costo,
                 COUNT(CASE WHEN s.estado = 'completado' THEN 1 END) as servicios_completados
                 FROM usuarios u
                 INNER JOIN servicios s ON u.id = s.tecnico_id
@@ -262,7 +262,7 @@ class ReportesController {
         
         $estadosSql = "SELECT estado,
                 COUNT(*) as cantidad,
-                SUM(costo_total) as total_ingresos
+                SUM(total) as total_ingresos
                 FROM servicios s
                 $whereClause
                 GROUP BY estado
@@ -271,12 +271,12 @@ class ReportesController {
         $servicios_por_estado = $db->query($estadosSql, $params)->fetchAll();
         
         $mensualSql = "SELECT 
-                DATE_FORMAT(s.fecha_servicio, '%Y-%m') as mes,
+                DATE_FORMAT(s.fecha_programada, '%Y-%m') as mes,
                 COUNT(*) as cantidad,
-                SUM(s.costo_total) as total_ingresos
+                SUM(s.total) as total_ingresos
                 FROM servicios s
                 $whereClause
-                GROUP BY DATE_FORMAT(s.fecha_servicio, '%Y-%m')
+                GROUP BY DATE_FORMAT(s.fecha_programada, '%Y-%m')
                 ORDER BY mes ASC";
         
         $servicios_mensuales = $db->query($mensualSql, $params)->fetchAll();
@@ -287,8 +287,8 @@ class ReportesController {
         $costosSql = "SELECT 
                 SUM(costo_mano_obra) as total_mano_obra,
                 SUM(costo_materiales) as total_materiales,
-                SUM(costo_desplazamiento) as total_desplazamiento,
-                SUM(costo_total) as total_general
+                SUM(otros_gastos) as total_desplazamiento,
+                SUM(total) as total_general
                 FROM servicios s
                 $whereClause";
         
@@ -296,7 +296,7 @@ class ReportesController {
         
         $clientesSql = "SELECT c.nombre, c.telefono,
                 COUNT(s.id) as total_servicios,
-                SUM(s.costo_total) as total_gastado
+                SUM(s.total) as total_gastado
                 FROM clientes c
                 INNER JOIN servicios s ON c.id = s.cliente_id
                 $whereClause
@@ -341,7 +341,7 @@ class ReportesController {
         }
         
         // Obtener productos
-        $sql = "SELECT p.sku, p.nombre, c.nombre as categoria, 
+        $sql = "SELECT p.codigo as sku, p.nombre, c.nombre as categoria, 
                 p.stock_actual as stock, p.precio_venta as precio,
                 (p.stock_actual * p.precio_venta) as valor_total
                 FROM productos p
@@ -423,7 +423,7 @@ class ReportesController {
         }
         
         // Obtener productos
-        $sql = "SELECT p.sku, p.nombre, c.nombre as categoria, 
+        $sql = "SELECT p.codigo as sku, p.nombre, c.nombre as categoria, 
                 p.stock_actual as stock, p.precio_venta as precio,
                 (p.stock_actual * p.precio_venta) as valor_total
                 FROM productos p
