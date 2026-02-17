@@ -215,6 +215,55 @@
     </div>
     <?php endif; ?>
     
+    <!-- Sección de Backup y Restauración -->
+    <div class="config-section">
+        <div class="config-section-header">
+            <i class="bi bi-database me-2"></i>Backup y Restauración
+        </div>
+        <div class="config-section-body">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <h6 class="fw-bold mb-3">Exportar Configuración</h6>
+                    <p class="text-muted small">Descarga un archivo de respaldo con todas las configuraciones actuales.</p>
+                    <a href="<?php echo BASE_URL; ?>configuraciones/exportar" class="btn btn-primary">
+                        <i class="bi bi-download"></i> Descargar Backup
+                    </a>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <h6 class="fw-bold mb-3">Importar Configuración</h6>
+                    <p class="text-muted small">Restaura las configuraciones desde un archivo de respaldo.</p>
+                    <form action="<?php echo BASE_URL; ?>configuraciones/importar" method="POST" enctype="multipart/form-data" onsubmit="return confirm('¿Está seguro de que desea restaurar las configuraciones? Se sobrescribirán los valores actuales.');">
+                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                        <div class="input-group">
+                            <input type="file" class="form-control" name="backup_file" accept=".json" required>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-upload"></i> Restaurar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-md-12">
+                    <h6 class="fw-bold mb-3">Restablecer Valores por Defecto</h6>
+                    <p class="text-muted small">Restaura todas las configuraciones a sus valores originales de fábrica.</p>
+                    <form action="<?php echo BASE_URL; ?>configuraciones/restablecer" method="POST" onsubmit="return confirm('¿Está seguro de que desea restablecer todas las configuraciones a sus valores por defecto? Esta acción no se puede deshacer.');">
+                        <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token'] ?? ''; ?>">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-arrow-counterclockwise"></i> Restablecer a Valores por Defecto
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="alert alert-warning mt-3">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Importante:</strong> Realice copias de seguridad periódicas de sus configuraciones. Se recomienda guardar el archivo de respaldo en un lugar seguro.
+            </div>
+        </div>
+    </div>
+    
     <!-- Botones de acción -->
     <div class="row">
         <div class="col-md-12">

@@ -26,6 +26,8 @@ class DashboardController {
         // Obtener datos para gráficas
         $gastosChart = $this->getGastosPorCategoria();
         $ventasMes = $this->getVentasPorMes();
+        $ingresosMes = $this->getIngresosPorMes();
+        $ingresosVsGastos = $this->getIngresosVsGastos();
         
         // Renderizar vista
         $pageTitle = 'Dashboard';
@@ -52,6 +54,10 @@ class DashboardController {
         // Gastos del mes
         $stmt = $this->db->query("SELECT SUM(monto) as total FROM gastos WHERE MONTH(fecha_gasto) = MONTH(CURRENT_DATE()) AND YEAR(fecha_gasto) = YEAR(CURRENT_DATE())");
         $stats['gastos_mes'] = $stmt->fetch()['total'] ?? 0;
+        
+        // Ingresos del mes
+        $stmt = $this->db->query("SELECT SUM(monto) as total FROM ingresos WHERE MONTH(fecha_ingreso) = MONTH(CURRENT_DATE()) AND YEAR(fecha_ingreso) = YEAR(CURRENT_DATE())");
+        $stats['ingresos_mes'] = $stmt->fetch()['total'] ?? 0;
         
         // Servicios activos
         $stmt = $this->db->query("SELECT COUNT(*) as total FROM servicios WHERE estado IN ('pendiente', 'en_proceso')");
@@ -118,6 +124,58 @@ class DashboardController {
                 FROM gastos
                 WHERE fecha_gasto >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
                 GROUP BY DATE_FORMAT(fecha_gasto, '%Y-%m')
+                ORDER BY mes";
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll();
+    }
+    
+    private function getIngresosPorMes() {
+        $sql = "SELECT 
+                    DATE_FORMAT(fecha_ingreso, '%Y-%m') as mes,
+                    SUM(monto) as total
+                FROM ingresos
+                WHERE fecha_ingreso >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+                GROUP BY DATE_FORMAT(fecha_ingreso, '%Y-%m')
+                ORDER BY mes";
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll();
+    }
+    
+    private function getIngresosVsGastos() {
+        $sql = "SELECT 
+                    DATE_FORMAT(COALESCE(i.mes, g.mes), '%Y-%m') as mes,
+                    COALESCE(i.total_ingresos, 0) as ingresos,
+                    COALESCE(g.total_gastos, 0) as gastos,
+                    COALESCE(i.total_ingresos, 0) - COALESCE(g.total_gastos, 0) as balance
+                FROM 
+                    (SELECT DATE_FORMAT(fecha_ingreso, '%Y-%m') as mes, SUM(monto) as total_ingresos
+                     FROM ingresos 
+                     WHERE fecha_ingreso >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+                     GROUP BY DATE_FORMAT(fecha_ingreso, '%Y-%m')) i
+                LEFT JOIN 
+                    (SELECT DATE_FORMAT(fecha_gasto, '%Y-%m') as mes, SUM(monto) as total_gastos
+                     FROM gastos 
+                     WHERE fecha_gasto >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+                     GROUP BY DATE_FORMAT(fecha_gasto, '%Y-%m')) g 
+                ON i.mes = g.mes
+                UNION
+                SELECT 
+                    DATE_FORMAT(COALESCE(i.mes, g.mes), '%Y-%m') as mes,
+                    COALESCE(i.total_ingresos, 0) as ingresos,
+                    COALESCE(g.total_gastos, 0) as gastos,
+                    COALESCE(i.total_ingresos, 0) - COALESCE(g.total_gastos, 0) as balance
+                FROM 
+                    (SELECT DATE_FORMAT(fecha_ingreso, '%Y-%m') as mes, SUM(monto) as total_ingresos
+                     FROM ingresos 
+                     WHERE fecha_ingreso >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+                     GROUP BY DATE_FORMAT(fecha_ingreso, '%Y-%m')) i
+                RIGHT JOIN 
+                    (SELECT DATE_FORMAT(fecha_gasto, '%Y-%m') as mes, SUM(monto) as total_gastos
+                     FROM gastos 
+                     WHERE fecha_gasto >= DATE_SUB(CURRENT_DATE(), INTERVAL 6 MONTH)
+                     GROUP BY DATE_FORMAT(fecha_gasto, '%Y-%m')) g 
+                ON i.mes = g.mes
+                WHERE i.mes IS NULL
                 ORDER BY mes";
         $stmt = $this->db->query($sql);
         return $stmt->fetchAll();
