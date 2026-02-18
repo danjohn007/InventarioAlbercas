@@ -1,7 +1,21 @@
 <?php
 /**
  * EmailSender - Utilidad para envío de correos electrónicos
- * Soporta SMTP con autenticación y diferentes tipos de encriptación
+ * 
+ * NOTA IMPORTANTE: Esta implementación usa la función mail() nativa de PHP con ini_set()
+ * para configuración SMTP básica. Esta aproximación tiene limitaciones:
+ * - No soporta autenticación SMTP de forma confiable
+ * - Configuración limitada de encriptación
+ * - Puede fallar con servidores SMTP que requieren autenticación
+ * 
+ * RECOMENDACIÓN PARA PRODUCCIÓN:
+ * Usar PHPMailer (https://github.com/PHPMailer/PHPMailer) o 
+ * SwiftMailer (https://swiftmailer.symfony.com/) para soporte completo de SMTP.
+ * 
+ * Ejemplo con PHPMailer:
+ * composer require phpmailer/phpmailer
+ * 
+ * Este código funciona para servidores SMTP simples y pruebas de desarrollo.
  */
 class EmailSender {
     

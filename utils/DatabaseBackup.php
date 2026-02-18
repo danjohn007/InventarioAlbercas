@@ -42,21 +42,45 @@ class DatabaseBackup {
             $dbUser = Config::get('DB_USER', 'root');
             $dbPass = Config::get('DB_PASS', '');
             
-            // Comando mysqldump
+            // Usar MYSQL_PWD environment variable para evitar exponer password en process list
+            // Nota: MYSQL_PWD es deprecado pero más seguro que --password en command line
+            $env = $dbPass ? ['MYSQL_PWD' => $dbPass] : [];
+            
+            // Comando mysqldump (sin password en command line)
             $command = sprintf(
-                'mysqldump --host=%s --user=%s %s %s > %s 2>&1',
+                'mysqldump --host=%s --user=%s %s > %s 2>&1',
                 escapeshellarg($dbHost),
                 escapeshellarg($dbUser),
-                $dbPass ? '--password=' . escapeshellarg($dbPass) : '',
                 escapeshellarg($dbName),
                 escapeshellarg($filepath)
             );
             
-            // Ejecutar backup
-            exec($command, $output, $returnCode);
+            // Ejecutar backup con environment variable
+            $descriptorspec = [
+                0 => ["pipe", "r"],
+                1 => ["pipe", "w"],
+                2 => ["pipe", "w"]
+            ];
+            
+            $process = proc_open($command, $descriptorspec, $pipes, null, $env);
+            
+            if (is_resource($process)) {
+                fclose($pipes[0]);
+                $output = stream_get_contents($pipes[1]);
+                $errors = stream_get_contents($pipes[2]);
+                fclose($pipes[1]);
+                fclose($pipes[2]);
+                $returnCode = proc_close($process);
+            } else {
+                $this->errors[] = 'No se pudo iniciar el proceso mysqldump';
+                return [
+                    'success' => false,
+                    'message' => 'Error al iniciar mysqldump'
+                ];
+            }
             
             if ($returnCode !== 0 || !file_exists($filepath) || filesize($filepath) === 0) {
-                $this->errors[] = 'Error al ejecutar mysqldump: ' . implode("\n", $output);
+                $this->errors[] = 'Error al ejecutar mysqldump: ' . $errors . ' ' . $output;
                 return [
                     'success' => false,
                     'message' => 'Error al crear respaldo: ' . implode("\n", $output)
@@ -140,18 +164,44 @@ class DatabaseBackup {
             $dbUser = Config::get('DB_USER', 'root');
             $dbPass = Config::get('DB_PASS', '');
             
-            // Comando mysql para restaurar
+            // Usar MYSQL_PWD environment variable para evitar exponer password en process list
+            $env = $dbPass ? ['MYSQL_PWD' => $dbPass] : [];
+            
+            // Comando mysql para restaurar (sin password en command line)
             $command = sprintf(
-                'mysql --host=%s --user=%s %s %s < %s 2>&1',
+                'mysql --host=%s --user=%s %s < %s 2>&1',
                 escapeshellarg($dbHost),
                 escapeshellarg($dbUser),
-                $dbPass ? '--password=' . escapeshellarg($dbPass) : '',
                 escapeshellarg($dbName),
                 escapeshellarg($sqlFile)
             );
             
-            // Ejecutar restore
-            exec($command, $output, $returnCode);
+            // Ejecutar restore con environment variable
+            $descriptorspec = [
+                0 => ["pipe", "r"],
+                1 => ["pipe", "w"],
+                2 => ["pipe", "w"]
+            ];
+            
+            $process = proc_open($command, $descriptorspec, $pipes, null, $env);
+            
+            if (is_resource($process)) {
+                fclose($pipes[0]);
+                $output = stream_get_contents($pipes[1]);
+                $errors = stream_get_contents($pipes[2]);
+                fclose($pipes[1]);
+                fclose($pipes[2]);
+                $returnCode = proc_close($process);
+            } else {
+                // Limpiar archivo temporal si existe
+                if ($sqlFile !== $filepath && file_exists($sqlFile)) {
+                    unlink($sqlFile);
+                }
+                return [
+                    'success' => false,
+                    'message' => 'Error al iniciar mysql client'
+                ];
+            }
             
             // Limpiar archivo temporal
             if ($sqlFile !== $filepath && file_exists($sqlFile)) {
@@ -161,7 +211,7 @@ class DatabaseBackup {
             if ($returnCode !== 0) {
                 return [
                     'success' => false,
-                    'message' => 'Error al restaurar: ' . implode("\n", $output)
+                    'message' => 'Error al restaurar: ' . $errors . ' ' . $output
                 ];
             }
             
