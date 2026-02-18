@@ -308,6 +308,16 @@
             <hr>
             <div class="row">
                 <div class="col-md-12">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-hdd me-2"></i>Respaldos de Base de Datos</h6>
+                    <p class="text-muted small">Administra los respaldos completos de la base de datos del sistema.</p>
+                    <a href="<?php echo BASE_URL; ?>configuraciones/backups" class="btn btn-primary">
+                        <i class="bi bi-hdd"></i> Administrar Respaldos
+                    </a>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-md-12">
                     <h6 class="fw-bold mb-3"><i class="bi bi-clock-history me-2"></i>Auditoría y Logs</h6>
                     <p class="text-muted small">Consulta el historial completo de cambios en las configuraciones del sistema.</p>
                     <a href="<?php echo BASE_URL; ?>configuraciones/auditoria" class="btn btn-info">

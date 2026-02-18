@@ -416,4 +416,145 @@ class ConfiguracionController {
         
         require_once __DIR__ . '/../views/layouts/main.php';
     }
+    
+    /**
+     * Administrar respaldos de base de datos
+     */
+    public function backups() {
+        Auth::requirePermission('configuraciones', 'actualizar');
+        
+        require_once __DIR__ . '/../utils/DatabaseBackup.php';
+        $backupManager = new DatabaseBackup();
+        
+        // Obtener lista de backups
+        $backups = $backupManager->listBackups();
+        
+        // Verificar disponibilidad de herramientas
+        $mysqldumpAvailable = DatabaseBackup::isMysqldumpAvailable();
+        $mysqlAvailable = DatabaseBackup::isMysqlAvailable();
+        
+        $pageTitle = 'Respaldos de Base de Datos';
+        $activeMenu = 'configuraciones';
+        
+        ob_start();
+        require_once __DIR__ . '/../views/configuraciones/backups.php';
+        $content = ob_get_clean();
+        
+        require_once __DIR__ . '/../views/layouts/main.php';
+    }
+    
+    /**
+     * Crear nuevo backup
+     */
+    public function crearBackup() {
+        Auth::requirePermission('configuraciones', 'actualizar');
+        
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+            exit;
+        }
+        
+        try {
+            require_once __DIR__ . '/../utils/DatabaseBackup.php';
+            $backupManager = new DatabaseBackup();
+            
+            $description = $_POST['description'] ?? '';
+            $result = $backupManager->create($description);
+            
+            echo json_encode($result);
+            
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+        
+        exit;
+    }
+    
+    /**
+     * Restaurar desde backup
+     */
+    public function restaurarBackup() {
+        Auth::requirePermission('configuraciones', 'actualizar');
+        
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+            exit;
+        }
+        
+        try {
+            require_once __DIR__ . '/../utils/DatabaseBackup.php';
+            $backupManager = new DatabaseBackup();
+            
+            $filename = $_POST['filename'] ?? '';
+            if (empty($filename)) {
+                echo json_encode(['success' => false, 'message' => 'Nombre de archivo requerido']);
+                exit;
+            }
+            
+            $result = $backupManager->restore($filename);
+            echo json_encode($result);
+            
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+        
+        exit;
+    }
+    
+    /**
+     * Eliminar backup
+     */
+    public function eliminarBackup() {
+        Auth::requirePermission('configuraciones', 'actualizar');
+        
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+            exit;
+        }
+        
+        try {
+            require_once __DIR__ . '/../utils/DatabaseBackup.php';
+            $backupManager = new DatabaseBackup();
+            
+            $filename = $_POST['filename'] ?? '';
+            if (empty($filename)) {
+                echo json_encode(['success' => false, 'message' => 'Nombre de archivo requerido']);
+                exit;
+            }
+            
+            $result = $backupManager->delete($filename);
+            echo json_encode($result);
+            
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+        
+        exit;
+    }
+    
+    /**
+     * Descargar backup
+     */
+    public function descargarBackup($filename) {
+        Auth::requirePermission('configuraciones', 'leer');
+        
+        require_once __DIR__ . '/../utils/DatabaseBackup.php';
+        $backupManager = new DatabaseBackup();
+        $backupManager->download($filename);
+    }
 }
