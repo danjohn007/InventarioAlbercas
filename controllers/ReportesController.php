@@ -187,7 +187,7 @@ class ReportesController {
         $topGastosSql = "SELECT g.*, gc.nombre as categoria_nombre, u.nombre as usuario_nombre
                 FROM gastos g
                 LEFT JOIN categorias_gasto gc ON g.categoria_id = gc.id
-                LEFT JOIN usuarios u ON g.usuario_id = u.id
+                LEFT JOIN usuarios u ON g.usuario_registro_id = u.id
                 $whereClause
                 ORDER BY g.monto DESC
                 LIMIT 10";
