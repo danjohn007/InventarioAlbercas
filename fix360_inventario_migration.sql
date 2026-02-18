@@ -152,19 +152,56 @@ CREATE TABLE IF NOT EXISTS gastos (
 -- ============================================
 
 -- Índices para mejorar performance de reportes de gastos
-ALTER TABLE gastos 
-ADD INDEX IF NOT EXISTS idx_fecha_monto (fecha_gasto, monto),
-ADD INDEX IF NOT EXISTS idx_forma_pago (forma_pago);
+-- Nota: Se ignoran errores si los índices ya existen
+SET @exist := (SELECT COUNT(*) FROM information_schema.statistics 
+               WHERE table_schema = DATABASE() AND table_name = 'gastos' 
+               AND index_name = 'idx_fecha_monto');
+SET @sqlstmt := IF(@exist = 0, 'ALTER TABLE gastos ADD INDEX idx_fecha_monto (fecha_gasto, monto)', 'SELECT "Index already exists"');
+PREPARE stmt FROM @sqlstmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @exist := (SELECT COUNT(*) FROM information_schema.statistics 
+               WHERE table_schema = DATABASE() AND table_name = 'gastos' 
+               AND index_name = 'idx_forma_pago');
+SET @sqlstmt := IF(@exist = 0, 'ALTER TABLE gastos ADD INDEX idx_forma_pago (forma_pago)', 'SELECT "Index already exists"');
+PREPARE stmt FROM @sqlstmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- Índices para mejorar performance de reportes de inventario
-ALTER TABLE productos 
-ADD INDEX IF NOT EXISTS idx_stock_categoria (stock_actual, categoria_id),
-ADD INDEX IF NOT EXISTS idx_precio (precio_venta);
+SET @exist := (SELECT COUNT(*) FROM information_schema.statistics 
+               WHERE table_schema = DATABASE() AND table_name = 'productos' 
+               AND index_name = 'idx_stock_categoria');
+SET @sqlstmt := IF(@exist = 0, 'ALTER TABLE productos ADD INDEX idx_stock_categoria (stock_actual, categoria_id)', 'SELECT "Index already exists"');
+PREPARE stmt FROM @sqlstmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @exist := (SELECT COUNT(*) FROM information_schema.statistics 
+               WHERE table_schema = DATABASE() AND table_name = 'productos' 
+               AND index_name = 'idx_precio');
+SET @sqlstmt := IF(@exist = 0, 'ALTER TABLE productos ADD INDEX idx_precio (precio_venta)', 'SELECT "Index already exists"');
+PREPARE stmt FROM @sqlstmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- Índices para mejorar performance de reportes de servicios
-ALTER TABLE servicios 
-ADD INDEX IF NOT EXISTS idx_fecha_estado (fecha_programada, estado),
-ADD INDEX IF NOT EXISTS idx_tecnico (tecnico_id);
+SET @exist := (SELECT COUNT(*) FROM information_schema.statistics 
+               WHERE table_schema = DATABASE() AND table_name = 'servicios' 
+               AND index_name = 'idx_fecha_estado');
+SET @sqlstmt := IF(@exist = 0, 'ALTER TABLE servicios ADD INDEX idx_fecha_estado (fecha_programada, estado)', 'SELECT "Index already exists"');
+PREPARE stmt FROM @sqlstmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @exist := (SELECT COUNT(*) FROM information_schema.statistics 
+               WHERE table_schema = DATABASE() AND table_name = 'servicios' 
+               AND index_name = 'idx_tecnico');
+SET @sqlstmt := IF(@exist = 0, 'ALTER TABLE servicios ADD INDEX idx_tecnico (tecnico_id)', 'SELECT "Index already exists"');
+PREPARE stmt FROM @sqlstmt;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- ============================================
 -- VISTAS PARA REPORTES
@@ -218,9 +255,12 @@ ORDER BY faltante DESC;
 -- ============================================
 
 -- Procedimiento: Obtener estadísticas de gastos por período
+-- Compatible con MySQL 5.7+
+DROP PROCEDURE IF EXISTS sp_estadisticas_gastos;
+
 DELIMITER $$
 
-CREATE PROCEDURE IF NOT EXISTS sp_estadisticas_gastos(
+CREATE PROCEDURE sp_estadisticas_gastos(
     IN p_fecha_inicio DATE,
     IN p_fecha_fin DATE
 )
