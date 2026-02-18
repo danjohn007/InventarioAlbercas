@@ -409,6 +409,20 @@ $router->post('/configuraciones/restablecer', function() {
     $controller->restablecer();
 });
 
+$router->post('/configuraciones/testEmail', function() {
+    Auth::requirePermission('configuraciones', 'actualizar');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->testEmail();
+});
+
+$router->get('/configuraciones/auditoria', function() {
+    Auth::requirePermission('configuraciones', 'leer');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->auditoria();
+});
+
 // Rutas de ingresos
 $router->get('/ingresos', function() {
     Auth::requirePermission('ingresos', 'leer');

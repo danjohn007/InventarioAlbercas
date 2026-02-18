@@ -264,4 +264,156 @@ class ConfiguracionController {
         header('Location: ' . BASE_URL . 'configuraciones');
         exit;
     }
+    
+    /**
+     * Probar configuración de email
+     */
+    public function testEmail() {
+        Auth::requirePermission('configuraciones', 'actualizar');
+        
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'Método no permitido']);
+            exit;
+        }
+        
+        try {
+            require_once __DIR__ . '/../utils/EmailSender.php';
+            $emailSender = new EmailSender();
+            
+            // Probar conexión primero
+            $connectionTest = $emailSender->testConnection();
+            if (!$connectionTest['success']) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => $connectionTest['message']
+                ]);
+                exit;
+            }
+            
+            // Obtener email de destino del POST
+            $testEmail = $_POST['test_email'] ?? '';
+            if (empty($testEmail) || !filter_var($testEmail, FILTER_VALIDATE_EMAIL)) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Email de destino inválido'
+                ]);
+                exit;
+            }
+            
+            // Enviar email de prueba
+            $result = $emailSender->sendTest($testEmail);
+            
+            if ($result) {
+                // Registrar en auditoría
+                $usuario = Auth::user();
+                $db = Database::getInstance();
+                $db->query("INSERT INTO auditoria (usuario_id, accion, tabla, detalles, ip_address, user_agent) 
+                            VALUES (:usuario_id, 'test_email', 'configuraciones', :detalles, :ip, :ua)", [
+                    'usuario_id' => $usuario['id'],
+                    'detalles' => 'Prueba de email enviada a ' . $testEmail,
+                    'ip' => $_SERVER['REMOTE_ADDR'],
+                    'ua' => $_SERVER['HTTP_USER_AGENT']
+                ]);
+                
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Email de prueba enviado correctamente a ' . $testEmail
+                ]);
+            } else {
+                $errors = $emailSender->getErrors();
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Error al enviar email: ' . implode(', ', $errors)
+                ]);
+            }
+            
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ]);
+        }
+        
+        exit;
+    }
+    
+    /**
+     * Ver historial de auditoría
+     */
+    public function auditoria() {
+        Auth::requirePermission('configuraciones', 'leer');
+        
+        $db = Database::getInstance();
+        
+        // Parámetros de paginación
+        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+        $perPage = 50;
+        $offset = ($page - 1) * $perPage;
+        
+        // Filtros
+        $where = ['1=1'];
+        $params = [];
+        
+        if (!empty($_GET['usuario_id'])) {
+            $where[] = 'a.usuario_id = :usuario_id';
+            $params['usuario_id'] = $_GET['usuario_id'];
+        }
+        
+        if (!empty($_GET['accion'])) {
+            $where[] = 'a.accion = :accion';
+            $params['accion'] = $_GET['accion'];
+        }
+        
+        if (!empty($_GET['tabla'])) {
+            $where[] = 'a.tabla = :tabla';
+            $params['tabla'] = $_GET['tabla'];
+        }
+        
+        if (!empty($_GET['fecha_desde'])) {
+            $where[] = 'DATE(a.fecha_creacion) >= :fecha_desde';
+            $params['fecha_desde'] = $_GET['fecha_desde'];
+        }
+        
+        if (!empty($_GET['fecha_hasta'])) {
+            $where[] = 'DATE(a.fecha_creacion) <= :fecha_hasta';
+            $params['fecha_hasta'] = $_GET['fecha_hasta'];
+        }
+        
+        $whereClause = implode(' AND ', $where);
+        
+        // Obtener total de registros
+        $sql = "SELECT COUNT(*) as total FROM auditoria a WHERE $whereClause";
+        $totalResult = $db->query($sql, $params)->fetch();
+        $total = $totalResult['total'];
+        $totalPages = ceil($total / $perPage);
+        
+        // Obtener registros de auditoría
+        $sql = "SELECT a.*, u.nombre, u.apellidos, u.usuario 
+                FROM auditoria a
+                LEFT JOIN usuarios u ON a.usuario_id = u.id
+                WHERE $whereClause
+                ORDER BY a.fecha_creacion DESC
+                LIMIT $perPage OFFSET $offset";
+        $auditLogs = $db->query($sql, $params)->fetchAll();
+        
+        // Obtener lista de usuarios para filtro
+        $usuarios = $db->query("SELECT id, nombre, apellidos, usuario FROM usuarios ORDER BY nombre")->fetchAll();
+        
+        // Obtener acciones únicas para filtro
+        $acciones = $db->query("SELECT DISTINCT accion FROM auditoria ORDER BY accion")->fetchAll();
+        
+        // Obtener tablas únicas para filtro
+        $tablas = $db->query("SELECT DISTINCT tabla FROM auditoria WHERE tabla IS NOT NULL ORDER BY tabla")->fetchAll();
+        
+        $pageTitle = 'Historial de Auditoría';
+        $activeMenu = 'configuraciones';
+        
+        ob_start();
+        require_once __DIR__ . '/../views/configuraciones/auditoria.php';
+        $content = ob_get_clean();
+        
+        require_once __DIR__ . '/../views/layouts/main.php';
+    }
 }

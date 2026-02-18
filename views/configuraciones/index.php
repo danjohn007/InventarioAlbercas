@@ -185,15 +185,21 @@
     </div>
     <?php endif; ?>
     
-    <!-- Configuraciones de Notificaciones -->
+    <!-- Configuraciones de Notificaciones y Email -->
     <?php if (isset($config_grouped['notificaciones'])): ?>
     <div class="config-section">
         <div class="config-section-header">
-            <i class="bi bi-bell me-2"></i>Notificaciones
+            <i class="bi bi-bell me-2"></i>Notificaciones y Email
         </div>
         <div class="config-section-body">
+            <!-- Configuraciones básicas de notificaciones -->
             <div class="row">
-                <?php foreach ($config_grouped['notificaciones'] as $config): ?>
+                <?php 
+                $emailFields = ['smtp_host', 'smtp_port', 'smtp_encryption', 'smtp_username', 'smtp_password', 
+                                'email_from_address', 'email_from_name', 'email_enabled'];
+                foreach ($config_grouped['notificaciones'] as $config): 
+                    if (in_array($config['clave'], $emailFields)) continue; // Skip email fields for now
+                ?>
                 <div class="col-md-6 mb-3">
                     <label class="form-label fw-bold"><?php echo ucfirst(str_replace('_', ' ', $config['clave'])); ?></label>
                     <small class="d-block text-muted mb-2"><?php echo $config['descripcion']; ?></small>
@@ -210,6 +216,62 @@
                     <?php endif; ?>
                 </div>
                 <?php endforeach; ?>
+            </div>
+            
+            <!-- Configuración de Email/SMTP -->
+            <hr class="my-4">
+            <h5 class="fw-bold mb-3"><i class="bi bi-envelope me-2"></i>Configuración de Correo Electrónico (SMTP)</h5>
+            <div class="row">
+                <?php 
+                foreach ($config_grouped['notificaciones'] as $config):
+                    if (!in_array($config['clave'], $emailFields)) continue;
+                ?>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold"><?php echo ucfirst(str_replace('_', ' ', $config['clave'])); ?></label>
+                    <small class="d-block text-muted mb-2"><?php echo $config['descripcion']; ?></small>
+                    
+                    <?php if ($config['tipo'] === 'booleano'): ?>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="<?php echo $config['clave']; ?>" 
+                                   id="<?php echo $config['clave']; ?>"
+                                   value="1" <?php echo $config['valor'] == '1' ? 'checked' : ''; ?>>
+                            <label class="form-check-label">Activar</label>
+                        </div>
+                    <?php elseif ($config['clave'] === 'smtp_password'): ?>
+                        <input type="password" class="form-control" name="<?php echo $config['clave']; ?>" 
+                               value="<?php echo htmlspecialchars($config['valor']); ?>"
+                               placeholder="Contraseña SMTP">
+                    <?php elseif ($config['clave'] === 'smtp_encryption'): ?>
+                        <select class="form-select" name="<?php echo $config['clave']; ?>">
+                            <option value="none" <?php echo $config['valor'] == 'none' ? 'selected' : ''; ?>>Sin encriptación</option>
+                            <option value="tls" <?php echo $config['valor'] == 'tls' ? 'selected' : ''; ?>>TLS (recomendado)</option>
+                            <option value="ssl" <?php echo $config['valor'] == 'ssl' ? 'selected' : ''; ?>>SSL</option>
+                        </select>
+                    <?php else: ?>
+                        <input type="text" class="form-control" name="<?php echo $config['clave']; ?>" 
+                               value="<?php echo htmlspecialchars($config['valor']); ?>"
+                               placeholder="<?php echo $config['clave'] === 'smtp_host' ? 'smtp.gmail.com' : ''; ?>">
+                    <?php endif; ?>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            
+            <!-- Botón para probar email -->
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Probar Configuración:</strong> Envía un email de prueba para verificar que la configuración SMTP funciona correctamente.
+                    </div>
+                    <div class="input-group">
+                        <input type="email" class="form-control" id="test_email_address" 
+                               placeholder="tu@email.com" required>
+                        <button type="button" class="btn btn-primary" id="btnTestEmail">
+                            <i class="bi bi-send me-2"></i>Enviar Email de Prueba
+                        </button>
+                    </div>
+                    <div id="email_test_result" class="mt-2"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -241,6 +303,16 @@
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-md-12">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-clock-history me-2"></i>Auditoría y Logs</h6>
+                    <p class="text-muted small">Consulta el historial completo de cambios en las configuraciones del sistema.</p>
+                    <a href="<?php echo BASE_URL; ?>configuraciones/auditoria" class="btn btn-info">
+                        <i class="bi bi-list-ul"></i> Ver Historial de Auditoría
+                    </a>
                 </div>
             </div>
             <hr>
@@ -305,5 +377,46 @@ document.querySelector('input[name="sitio_logo"]')?.addEventListener('change', f
         };
         reader.readAsDataURL(file);
     }
+});
+
+// Test email functionality
+document.getElementById('btnTestEmail')?.addEventListener('click', function() {
+    const testEmail = document.getElementById('test_email_address').value;
+    const resultDiv = document.getElementById('email_test_result');
+    const btn = this;
+    
+    if (!testEmail || !testEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+        resultDiv.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Por favor ingrese un email válido</div>';
+        return;
+    }
+    
+    // Disable button and show loading
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando...';
+    resultDiv.innerHTML = '<div class="alert alert-info"><i class="bi bi-hourglass-split me-2"></i>Enviando email de prueba...</div>';
+    
+    // Send AJAX request
+    fetch('<?php echo BASE_URL; ?>configuraciones/testEmail', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'test_email=' + encodeURIComponent(testEmail)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            resultDiv.innerHTML = '<div class="alert alert-success"><i class="bi bi-check-circle me-2"></i>' + data.message + '</div>';
+        } else {
+            resultDiv.innerHTML = '<div class="alert alert-danger"><i class="bi bi-x-circle me-2"></i>' + data.message + '</div>';
+        }
+    })
+    .catch(error => {
+        resultDiv.innerHTML = '<div class="alert alert-danger"><i class="bi bi-x-circle me-2"></i>Error al enviar email: ' + error.message + '</div>';
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-send me-2"></i>Enviar Email de Prueba';
+    });
 });
 </script>
