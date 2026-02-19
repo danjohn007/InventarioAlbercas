@@ -10,7 +10,7 @@ USE inventario_albercas;
 -- ============================================
 -- TABLA: roles
 -- ============================================
-CREATE TABLE roles (
+CREATE TABLE IF NOT EXISTS roles (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(50) NOT NULL UNIQUE,
     descripcion TEXT,
@@ -23,7 +23,7 @@ CREATE TABLE roles (
 -- ============================================
 -- TABLA: usuarios
 -- ============================================
-CREATE TABLE usuarios (
+CREATE TABLE IF NOT EXISTS usuarios (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(100) NOT NULL,
     apellidos VARCHAR(100) NOT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE usuarios (
 -- ============================================
 -- TABLA: auditoria
 -- ============================================
-CREATE TABLE auditoria (
+CREATE TABLE IF NOT EXISTS auditoria (
     id INT PRIMARY KEY AUTO_INCREMENT,
     usuario_id INT NOT NULL,
     accion VARCHAR(50) NOT NULL,
@@ -61,7 +61,7 @@ CREATE TABLE auditoria (
 -- ============================================
 -- TABLA: proveedores
 -- ============================================
-CREATE TABLE proveedores (
+CREATE TABLE IF NOT EXISTS proveedores (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(100) NOT NULL,
     contacto VARCHAR(100),
@@ -77,7 +77,7 @@ CREATE TABLE proveedores (
 -- ============================================
 -- TABLA: categorias_producto
 -- ============================================
-CREATE TABLE categorias_producto (
+CREATE TABLE IF NOT EXISTS categorias_producto (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(50) NOT NULL UNIQUE,
     descripcion TEXT,
@@ -88,7 +88,7 @@ CREATE TABLE categorias_producto (
 -- ============================================
 -- TABLA: productos
 -- ============================================
-CREATE TABLE productos (
+CREATE TABLE IF NOT EXISTS productos (
     id INT PRIMARY KEY AUTO_INCREMENT,
     codigo VARCHAR(50) UNIQUE,
     nombre VARCHAR(100) NOT NULL,
@@ -113,7 +113,7 @@ CREATE TABLE productos (
 -- ============================================
 -- TABLA: inventario_movimientos
 -- ============================================
-CREATE TABLE inventario_movimientos (
+CREATE TABLE IF NOT EXISTS inventario_movimientos (
     id INT PRIMARY KEY AUTO_INCREMENT,
     producto_id INT NOT NULL,
     tipo_movimiento ENUM('entrada', 'salida', 'ajuste') NOT NULL,
@@ -138,7 +138,7 @@ CREATE TABLE inventario_movimientos (
 -- ============================================
 -- TABLA: clientes
 -- ============================================
-CREATE TABLE clientes (
+CREATE TABLE IF NOT EXISTS clientes (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(100) NOT NULL,
     apellidos VARCHAR(100),
@@ -160,7 +160,7 @@ CREATE TABLE clientes (
 -- ============================================
 -- TABLA: servicios
 -- ============================================
-CREATE TABLE servicios (
+CREATE TABLE IF NOT EXISTS servicios (
     id INT PRIMARY KEY AUTO_INCREMENT,
     cliente_id INT NOT NULL,
     tipo_servicio ENUM('mantenimiento', 'reparacion', 'instalacion', 'otro') NOT NULL,
@@ -192,7 +192,7 @@ CREATE TABLE servicios (
 -- ============================================
 -- TABLA: servicio_materiales
 -- ============================================
-CREATE TABLE servicio_materiales (
+CREATE TABLE IF NOT EXISTS servicio_materiales (
     id INT PRIMARY KEY AUTO_INCREMENT,
     servicio_id INT NOT NULL,
     producto_id INT NOT NULL,
@@ -209,7 +209,7 @@ CREATE TABLE servicio_materiales (
 -- ============================================
 -- TABLA: categorias_gasto
 -- ============================================
-CREATE TABLE categorias_gasto (
+CREATE TABLE IF NOT EXISTS categorias_gasto (
     id INT PRIMARY KEY AUTO_INCREMENT,
     nombre VARCHAR(50) NOT NULL UNIQUE,
     descripcion TEXT,
@@ -220,7 +220,7 @@ CREATE TABLE categorias_gasto (
 -- ============================================
 -- TABLA: gastos
 -- ============================================
-CREATE TABLE gastos (
+CREATE TABLE IF NOT EXISTS gastos (
     id INT PRIMARY KEY AUTO_INCREMENT,
     categoria_id INT NOT NULL,
     concepto VARCHAR(200) NOT NULL,
