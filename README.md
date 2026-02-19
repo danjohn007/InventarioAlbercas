@@ -3,6 +3,7 @@
 Sistema web completo de administración de inventario, gastos y servicios para empresas de mantenimiento, reparación e instalación de albercas.
 
 > **✅ Última actualización (2026-02-19):** 
+> - **NUEVO:** Se resolvió el error #1062 "Entrada duplicada" agregando INSERT IGNORE. Ver [FIX_ERROR_1062_ENTRADA_DUPLICADA.md](FIX_ERROR_1062_ENTRADA_DUPLICADA.md)
 > - **NUEVO:** Se resolvió el error #1050 "La tabla ya existe" agregando IF NOT EXISTS. Ver [FIX_ERROR_1050_TABLA_EXISTE.md](FIX_ERROR_1050_TABLA_EXISTE.md)
 > - **NUEVO:** Se resolvió el error 403 en módulo Configuraciones agregando permisos faltantes. Ver [FIX_403_CONFIGURACIONES_RESUELTO.md](FIX_403_CONFIGURACIONES_RESUELTO.md)
 > - Se resolvió el error 403 - FORBIDDEN con validación robusta de permisos. Ver [SOLUCION_403.md](SOLUCION_403.md)
@@ -395,6 +396,11 @@ Zonas horarias disponibles: [PHP Timezones](https://www.php.net/manual/es/timezo
 - ✅ **RESUELTO**: El archivo `database.sql` ahora usa `IF NOT EXISTS`
 - Puedes ejecutar el script múltiples veces sin errores
 - Ver documentación completa: [FIX_ERROR_1050_TABLA_EXISTE.md](FIX_ERROR_1050_TABLA_EXISTE.md)
+
+### Error: "#1062 - Entrada duplicada para la clave"
+- ✅ **RESUELTO**: El archivo `database.sql` ahora usa `INSERT IGNORE`
+- Los datos iniciales no causan errores al re-ejecutar el script
+- Ver documentación completa: [FIX_ERROR_1062_ENTRADA_DUPLICADA.md](FIX_ERROR_1062_ENTRADA_DUPLICADA.md)
 
 ### Error: "404 - Página no encontrada"
 - Asegúrate de que mod_rewrite esté habilitado
