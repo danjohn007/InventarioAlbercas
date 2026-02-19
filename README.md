@@ -2,12 +2,12 @@
 
 Sistema web completo de administración de inventario, gastos y servicios para empresas de mantenimiento, reparación e instalación de albercas.
 
-> **✅ Última actualización (2026-02-14):** 
+> **✅ Última actualización (2026-02-19):** 
+> - **NUEVO:** Se resolvió el error 403 en módulo Configuraciones agregando permisos faltantes. Ver [FIX_403_CONFIGURACIONES_RESUELTO.md](FIX_403_CONFIGURACIONES_RESUELTO.md)
 > - Se resolvió el error 403 - FORBIDDEN con validación robusta de permisos. Ver [SOLUCION_403.md](SOLUCION_403.md)
 > - Se resolvió el error 403 en directorio /public. Ver [GUIA_RAPIDA.md](GUIA_RAPIDA.md)
 > - Se implementó solución para error open_basedir con archivo .user.ini. Ver [SOLUCION_OPEN_BASEDIR.md](SOLUCION_OPEN_BASEDIR.md)
-> - Se actualizaron rutas en documentación (inventario/3)
-> - **NUEVO:** Se resolvió el error 404 en ruta de login. Ver [SOLUCION_404_LOGIN.md](SOLUCION_404_LOGIN.md)
+> - Se resolvió el error 404 en ruta de login. Ver [SOLUCION_404_LOGIN.md](SOLUCION_404_LOGIN.md)
 
 ## 📋 Características Principales
 
@@ -59,6 +59,20 @@ Sistema web completo de administración de inventario, gastos y servicios para e
 - Gráficas interactivas con Chart.js
 - Exportación a PDF e impresión
 
+### ⚙️ Configuraciones del Sistema
+- Configuración general del sistema (nombre, logo, colores)
+- Gestión de respaldos de base de datos
+- Historial de auditoría de todas las acciones
+- Configuración de notificaciones
+- Importar/exportar configuraciones
+
+### 💵 Módulo de Ingresos
+- Registro de ingresos con categorías
+- Relación con servicios y clientes
+- Seguimiento de pagos recibidos
+- Formas de pago: Efectivo, Tarjeta, Transferencia, Cheque
+- Control de facturación
+
 ## 🛠️ Stack Tecnológico
 
 - **Backend:** PHP 7+ (puro, sin framework)
@@ -82,9 +96,11 @@ InventarioAlbercas/
 │   ├── UsuariosController.php
 │   ├── InventarioController.php
 │   ├── GastosController.php
+│   ├── IngresosController.php
 │   ├── ServiciosController.php
 │   ├── ClientesController.php
-│   └── ReportesController.php
+│   ├── ReportesController.php
+│   └── ConfiguracionController.php
 ├── models/             # Modelos (si se requieren)
 ├── views/              # Vistas
 │   ├── layouts/       # Plantillas principales
@@ -93,9 +109,11 @@ InventarioAlbercas/
 │   ├── usuarios/      # Usuarios
 │   ├── inventario/    # Inventario y movimientos
 │   ├── gastos/        # Gastos
+│   ├── ingresos/      # Ingresos
 │   ├── servicios/     # Servicios
 │   ├── clientes/      # Clientes
 │   ├── reportes/      # Reportes
+│   ├── configuraciones/ # Configuraciones del sistema
 │   └── errors/        # Páginas de error
 ├── public/             # Archivos públicos
 │   ├── css/           # Estilos personalizados
@@ -250,10 +268,13 @@ El sistema viene con 3 usuarios de prueba:
 3. Gestionar proveedores
 4. Acceso a todos los reportes
 5. Eliminar registros
+6. Acceso a configuraciones del sistema
+7. Gestionar respaldos de base de datos
+8. Ver historial de auditoría completo
 
 ### Para Supervisores
 1. Gestión completa de inventario
-2. Registro y control de gastos
+2. Registro y control de gastos e ingresos
 3. Crear y gestionar servicios
 4. Asignar materiales a servicios
 5. Consultar reportes
@@ -299,6 +320,19 @@ El sistema viene con 3 usuarios de prueba:
 - Servicios con métricas de desempeño
 - Exportación e impresión
 
+### Ingresos
+- Registro de ingresos por categoría
+- Relación con servicios y clientes
+- Control de pagos recibidos
+- Análisis financiero
+
+### Configuraciones
+- Configuración general del sistema
+- Gestión de usuarios y permisos
+- Respaldos de base de datos
+- Historial de auditoría
+- Personalización de apariencia
+
 ## 🔧 Configuración Avanzada
 
 ### URLs Amigables
@@ -308,9 +342,11 @@ El sistema usa `.htaccess` para URLs limpias:
 /dashboard          → Dashboard
 /inventario         → Inventario
 /gastos             → Gastos
+/ingresos           → Ingresos
 /servicios          → Servicios
 /clientes           → Clientes
 /reportes           → Reportes
+/configuraciones    → Configuraciones (solo admin)
 ```
 
 ### URL Base Automática
