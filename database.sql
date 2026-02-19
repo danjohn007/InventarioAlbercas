@@ -251,32 +251,32 @@ CREATE TABLE IF NOT EXISTS gastos (
 -- ============================================
 
 -- Insertar roles
-INSERT INTO roles (nombre, descripcion, permisos) VALUES
+INSERT IGNORE INTO roles (nombre, descripcion, permisos) VALUES
 ('Administrador', 'Control total del sistema', '{"usuarios": ["crear", "leer", "actualizar", "eliminar"], "inventario": ["crear", "leer", "actualizar", "eliminar"], "gastos": ["crear", "leer", "actualizar", "eliminar"], "servicios": ["crear", "leer", "actualizar", "eliminar"], "clientes": ["crear", "leer", "actualizar", "eliminar"], "reportes": ["leer", "exportar"], "ingresos": ["crear", "leer", "actualizar", "eliminar"], "configuraciones": ["leer", "actualizar"]}'),
 ('Supervisor', 'Gestión de inventario, gastos y servicios', '{"usuarios": ["leer"], "inventario": ["crear", "leer", "actualizar"], "gastos": ["crear", "leer", "actualizar"], "servicios": ["crear", "leer", "actualizar"], "clientes": ["crear", "leer", "actualizar"], "reportes": ["leer"], "ingresos": ["crear", "leer", "actualizar"]}'),
 ('Tecnico', 'Consulta y registro de consumo', '{"inventario": ["leer"], "servicios": ["leer", "actualizar"], "clientes": ["leer"], "gastos": ["crear", "leer"]}');
 
 -- Insertar usuarios (password: admin123, supervisor123, tecnico123)
-INSERT INTO usuarios (nombre, apellidos, email, telefono, usuario, password, rol_id) VALUES
+INSERT IGNORE INTO usuarios (nombre, apellidos, email, telefono, usuario, password, rol_id) VALUES
 ('Juan', 'Pérez García', 'admin@albercas.com', '5551234567', 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1),
 ('María', 'González López', 'supervisor@albercas.com', '5557654321', 'supervisor', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 2),
 ('Carlos', 'Ramírez Torres', 'tecnico@albercas.com', '5559876543', 'tecnico', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 3);
 
 -- Insertar categorías de producto
-INSERT INTO categorias_producto (nombre, descripcion) VALUES
+INSERT IGNORE INTO categorias_producto (nombre, descripcion) VALUES
 ('Químicos', 'Productos químicos para tratamiento de agua'),
 ('Herramientas', 'Herramientas para mantenimiento'),
 ('Refacciones', 'Repuestos y refacciones'),
 ('Equipos', 'Equipos y maquinaria');
 
 -- Insertar proveedores
-INSERT INTO proveedores (nombre, contacto, telefono, email, direccion, rfc) VALUES
+INSERT IGNORE INTO proveedores (nombre, contacto, telefono, email, direccion, rfc) VALUES
 ('Químicos del Norte', 'Pedro Sánchez', '5551122334', 'ventas@quimicosnorte.com', 'Av. Industrial 123', 'QDN123456ABC'),
 ('Herramientas Pro', 'Ana Martínez', '5552233445', 'contacto@herramientaspro.com', 'Calle Comercio 456', 'HPR789012DEF'),
 ('Equipos de Piscina SA', 'Roberto López', '5553344556', 'info@equipospiscina.com', 'Blvd. Central 789', 'EPS345678GHI');
 
 -- Insertar productos
-INSERT INTO productos (codigo, nombre, descripcion, categoria_id, unidad_medida, costo_unitario, precio_venta, stock_actual, stock_minimo, proveedor_id) VALUES
+INSERT IGNORE INTO productos (codigo, nombre, descripcion, categoria_id, unidad_medida, costo_unitario, precio_venta, stock_actual, stock_minimo, proveedor_id) VALUES
 ('CLORO-001', 'Cloro granulado 10kg', 'Cloro granulado para desinfección', 1, 'kg', 350.00, 500.00, 50.00, 10.00, 1),
 ('PH-001', 'Reductor de PH 5kg', 'Reductor de pH para agua', 1, 'kg', 180.00, 280.00, 30.00, 5.00, 1),
 ('ALGICIDA-001', 'Algicida líquido 4L', 'Prevención de algas', 1, 'litro', 220.00, 350.00, 25.00, 5.00, 1),
@@ -287,7 +287,7 @@ INSERT INTO productos (codigo, nombre, descripcion, categoria_id, unidad_medida,
 ('MANGUERA-001', 'Manguera flexible 15m', 'Manguera para aspiradora', 3, 'pieza', 280.00, 450.00, 10.00, 2.00, 2);
 
 -- Insertar categorías de gasto
-INSERT INTO categorias_gasto (nombre, descripcion) VALUES
+INSERT IGNORE INTO categorias_gasto (nombre, descripcion) VALUES
 ('Materiales', 'Compra de materiales e insumos'),
 ('Gasolina', 'Combustible para vehículos'),
 ('Viáticos', 'Gastos de alimentación y viaje'),
@@ -296,20 +296,20 @@ INSERT INTO categorias_gasto (nombre, descripcion) VALUES
 ('Mantenimiento Equipo', 'Mantenimiento de herramientas y equipos');
 
 -- Insertar clientes
-INSERT INTO clientes (nombre, apellidos, telefono, email, direccion, ciudad, estado, codigo_postal) VALUES
+INSERT IGNORE INTO clientes (nombre, apellidos, telefono, email, direccion, ciudad, estado, codigo_postal) VALUES
 ('Roberto', 'Hernández Silva', '5551111111', 'roberto.hernandez@email.com', 'Calle Privada 123, Col. Jardines', 'Ciudad de México', 'CDMX', '01234'),
 ('Laura', 'Martínez Ruiz', '5552222222', 'laura.martinez@email.com', 'Av. Principal 456, Col. Centro', 'Guadalajara', 'Jalisco', '44100'),
 ('Fernando', 'López García', '5553333333', 'fernando.lopez@email.com', 'Calle Norte 789, Col. Las Palmas', 'Monterrey', 'Nuevo León', '64000'),
 ('Hotel Paradise', '', '5554444444', 'info@hotelparadise.com', 'Blvd. Turístico 100, Zona Hotelera', 'Cancún', 'Quintana Roo', '77500');
 
 -- Insertar servicios de ejemplo
-INSERT INTO servicios (cliente_id, tipo_servicio, titulo, descripcion, direccion_servicio, fecha_programada, fecha_inicio, tecnico_id, estado, costo_mano_obra, usuario_registro_id) VALUES
+INSERT IGNORE INTO servicios (cliente_id, tipo_servicio, titulo, descripcion, direccion_servicio, fecha_programada, fecha_inicio, tecnico_id, estado, costo_mano_obra, usuario_registro_id) VALUES
 (1, 'mantenimiento', 'Mantenimiento mensual', 'Limpieza y balanceo químico', 'Calle Privada 123, Col. Jardines', '2024-01-15', '2024-01-15 10:00:00', 3, 'completado', 800.00, 2),
 (2, 'reparacion', 'Reparación de bomba', 'Cambio de rodamientos y sello mecánico', 'Av. Principal 456, Col. Centro', '2024-01-20', '2024-01-20 09:00:00', 3, 'completado', 1200.00, 2),
 (3, 'mantenimiento', 'Mantenimiento preventivo', 'Revisión general y limpieza', 'Calle Norte 789, Col. Las Palmas', '2024-02-05', NULL, 3, 'pendiente', 850.00, 2);
 
 -- Insertar movimientos de inventario de ejemplo
-INSERT INTO inventario_movimientos (producto_id, tipo_movimiento, cantidad, costo_unitario, costo_total, stock_anterior, stock_nuevo, motivo, usuario_id, fecha_movimiento) VALUES
+INSERT IGNORE INTO inventario_movimientos (producto_id, tipo_movimiento, cantidad, costo_unitario, costo_total, stock_anterior, stock_nuevo, motivo, usuario_id, fecha_movimiento) VALUES
 (1, 'entrada', 50.00, 350.00, 17500.00, 0.00, 50.00, 'Compra inicial', 2, '2024-01-01 10:00:00'),
 (2, 'entrada', 30.00, 180.00, 5400.00, 0.00, 30.00, 'Compra inicial', 2, '2024-01-01 10:00:00'),
 (3, 'entrada', 25.00, 220.00, 5500.00, 0.00, 25.00, 'Compra inicial', 2, '2024-01-01 10:00:00'),
@@ -317,7 +317,7 @@ INSERT INTO inventario_movimientos (producto_id, tipo_movimiento, cantidad, cost
 (2, 'salida', 2.00, 180.00, 360.00, 30.00, 28.00, 'Uso en servicio', 3, '2024-01-15 11:00:00');
 
 -- Insertar gastos de ejemplo
-INSERT INTO gastos (categoria_id, concepto, descripcion, monto, fecha_gasto, forma_pago, servicio_id, usuario_registro_id) VALUES
+INSERT IGNORE INTO gastos (categoria_id, concepto, descripcion, monto, fecha_gasto, forma_pago, servicio_id, usuario_registro_id) VALUES
 (2, 'Gasolina camioneta', 'Llenado de tanque', 650.00, '2024-01-10', 'tarjeta', NULL, 2),
 (3, 'Comida técnico', 'Viáticos por servicio', 200.00, '2024-01-15', 'efectivo', 1, 3),
 (1, 'Compra de químicos', 'Reposición de inventario', 17500.00, '2024-01-01', 'transferencia', NULL, 2),
