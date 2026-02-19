@@ -3,6 +3,7 @@
 Sistema web completo de administración de inventario, gastos y servicios para empresas de mantenimiento, reparación e instalación de albercas.
 
 > **✅ Última actualización (2026-02-19):** 
+> - **NUEVO:** Se resolvió el error #1050 "La tabla ya existe" agregando IF NOT EXISTS. Ver [FIX_ERROR_1050_TABLA_EXISTE.md](FIX_ERROR_1050_TABLA_EXISTE.md)
 > - **NUEVO:** Se resolvió el error 403 en módulo Configuraciones agregando permisos faltantes. Ver [FIX_403_CONFIGURACIONES_RESUELTO.md](FIX_403_CONFIGURACIONES_RESUELTO.md)
 > - Se resolvió el error 403 - FORBIDDEN con validación robusta de permisos. Ver [SOLUCION_403.md](SOLUCION_403.md)
 > - Se resolvió el error 403 en directorio /public. Ver [GUIA_RAPIDA.md](GUIA_RAPIDA.md)
@@ -389,6 +390,11 @@ Zonas horarias disponibles: [PHP Timezones](https://www.php.net/manual/es/timezo
 - Verifica las credenciales en `.env`
 - Asegúrate de que MySQL esté corriendo
 - Verifica que la base de datos exista
+
+### Error: "#1050 - La tabla ya existe"
+- ✅ **RESUELTO**: El archivo `database.sql` ahora usa `IF NOT EXISTS`
+- Puedes ejecutar el script múltiples veces sin errores
+- Ver documentación completa: [FIX_ERROR_1050_TABLA_EXISTE.md](FIX_ERROR_1050_TABLA_EXISTE.md)
 
 ### Error: "404 - Página no encontrada"
 - Asegúrate de que mod_rewrite esté habilitado
