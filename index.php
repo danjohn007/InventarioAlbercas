@@ -409,6 +409,55 @@ $router->post('/configuraciones/restablecer', function() {
     $controller->restablecer();
 });
 
+$router->post('/configuraciones/testEmail', function() {
+    Auth::requirePermission('configuraciones', 'actualizar');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->testEmail();
+});
+
+$router->get('/configuraciones/auditoria', function() {
+    Auth::requirePermission('configuraciones', 'leer');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->auditoria();
+});
+
+$router->get('/configuraciones/backups', function() {
+    Auth::requirePermission('configuraciones', 'actualizar');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->backups();
+});
+
+$router->post('/configuraciones/crearBackup', function() {
+    Auth::requirePermission('configuraciones', 'actualizar');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->crearBackup();
+});
+
+$router->post('/configuraciones/restaurarBackup', function() {
+    Auth::requirePermission('configuraciones', 'actualizar');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->restaurarBackup();
+});
+
+$router->post('/configuraciones/eliminarBackup', function() {
+    Auth::requirePermission('configuraciones', 'actualizar');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->eliminarBackup();
+});
+
+$router->get('/configuraciones/descargarBackup/(.+)', function($filename) {
+    Auth::requirePermission('configuraciones', 'leer');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->descargarBackup($filename);
+});
+
 // Rutas de ingresos
 $router->get('/ingresos', function() {
     Auth::requirePermission('ingresos', 'leer');
