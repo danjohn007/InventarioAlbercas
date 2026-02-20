@@ -182,18 +182,60 @@ class Auth {
      * Re-fetch the current user's role permissions from the database
      * and update the session. Fixes stale sessions when a role is
      * updated in the DB after the user has already logged in.
+     *
+     * Also performs a self-healing migration: if the DB role is missing
+     * known required module permissions (e.g. because the SQL migration
+     * was never applied on the production server), it patches the role
+     * in-place so subsequent requests and logins work correctly.
      */
     public static function refreshUserPermissions($userId) {
+        // Minimum required permissions for each default role.
+        // Only ADDS missing modules – never removes existing ones.
+        $requiredByRole = [
+            'Administrador' => [
+                'configuraciones' => ['leer', 'actualizar'],
+                'ingresos'        => ['crear', 'leer', 'actualizar', 'eliminar'],
+                'reportes'        => ['leer', 'exportar'],
+            ],
+            'Supervisor' => [
+                'ingresos' => ['crear', 'leer', 'actualizar'],
+                'reportes' => ['leer', 'exportar'],
+            ],
+        ];
+
         try {
             $db = Database::getInstance();
-            $sql = "SELECT r.permisos FROM usuarios u 
-                    INNER JOIN roles r ON u.rol_id = r.id 
+            $sql = "SELECT u.rol_id, r.nombre as rol_nombre, r.permisos
+                    FROM usuarios u
+                    INNER JOIN roles r ON u.rol_id = r.id
                     WHERE u.id = :id AND u.activo = 1 AND r.activo = 1 LIMIT 1";
             $result = $db->query($sql, ['id' => (int)$userId])->fetch();
-            
+
             if ($result) {
                 $permisos = json_decode($result['permisos'], true);
                 if (is_array($permisos)) {
+                    // Self-healing migration: add any missing module permissions
+                    $patched = false;
+                    $rolNombre = $result['rol_nombre'];
+                    if (isset($requiredByRole[$rolNombre])) {
+                        foreach ($requiredByRole[$rolNombre] as $modulo => $acciones) {
+                            if (!isset($permisos[$modulo])) {
+                                $permisos[$modulo] = $acciones;
+                                $patched = true;
+                            }
+                        }
+                    }
+
+                    if ($patched) {
+                        // Persist patched permissions back to the DB so future
+                        // logins also receive the correct permissions.
+                        $db->query(
+                            "UPDATE roles SET permisos = :p WHERE id = :id",
+                            ['p' => json_encode($permisos), 'id' => (int)$result['rol_id']]
+                        );
+                        error_log("INFO: Auto-migrated permissions for role '$rolNombre'");
+                    }
+
                     $_SESSION['user_permisos'] = $permisos;
                 } else {
                     error_log("WARNING: JSON de permisos inválido para el usuario ID $userId");
