@@ -328,7 +328,7 @@ INSERT IGNORE INTO gastos (categoria_id, concepto, descripcion, monto, fecha_gas
 -- ============================================
 
 -- Vista de stock bajo
-CREATE VIEW vista_productos_stock_bajo AS
+CREATE OR REPLACE VIEW vista_productos_stock_bajo AS
 SELECT 
     p.id,
     p.codigo,
@@ -343,7 +343,7 @@ LEFT JOIN proveedores pr ON p.proveedor_id = pr.id
 WHERE p.stock_actual <= p.stock_minimo AND p.activo = 1;
 
 -- Vista de servicios con información del cliente
-CREATE VIEW vista_servicios_completos AS
+CREATE OR REPLACE VIEW vista_servicios_completos AS
 SELECT 
     s.id,
     s.tipo_servicio,
@@ -359,7 +359,7 @@ INNER JOIN clientes c ON s.cliente_id = c.id
 INNER JOIN usuarios u ON s.tecnico_id = u.id;
 
 -- Vista de gastos con información relacionada
-CREATE VIEW vista_gastos_completos AS
+CREATE OR REPLACE VIEW vista_gastos_completos AS
 SELECT 
     g.id,
     g.concepto,
