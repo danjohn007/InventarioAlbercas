@@ -1,9 +1,37 @@
+<?php
+// Load site settings from configuraciones table (with fallback defaults)
+$_sitioNombre    = 'Sistema Albercas';
+$_sitioLogo      = '';
+$_colorPrimario  = '#667eea';
+$_colorSecundario = '#764ba2';
+try {
+    $__db = Database::getInstance();
+    $__cfgs = $__db->query(
+        "SELECT clave, valor FROM configuraciones WHERE clave IN ('sitio_nombre','sitio_logo','color_primario','color_secundario')"
+    )->fetchAll(PDO::FETCH_KEY_PAIR);
+    if (!empty($__cfgs)) {
+        $_sitioNombre     = $__cfgs['sitio_nombre']     ?? $_sitioNombre;
+        $_sitioLogo       = $__cfgs['sitio_logo']       ?? $_sitioLogo;
+        $_colorPrimario   = $__cfgs['color_primario']   ?? $_colorPrimario;
+        $_colorSecundario = $__cfgs['color_secundario'] ?? $_colorSecundario;
+    }
+} catch (Exception $__e) {
+    // Table may not exist yet; keep defaults
+}
+// Sanitize color values: allow only valid hex colors (3 or 6 hex digits)
+$_colorPrimario   = preg_match('/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $_colorPrimario)   ? $_colorPrimario   : '#667eea';
+$_colorSecundario = preg_match('/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $_colorSecundario) ? $_colorSecundario : '#764ba2';
+// Validate logo path: must be a relative path inside uploads/ with no directory traversal
+if (!empty($_sitioLogo) && !preg_match('/^uploads\/[a-zA-Z0-9_\-\.]+\.(png|jpg|jpeg|gif|svg|webp)$/i', $_sitioLogo)) {
+    $_sitioLogo = '';
+}
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo isset($pageTitle) ? $pageTitle . ' - ' : ''; ?>Sistema de Inventario</title>
+    <title><?php echo isset($pageTitle) ? htmlspecialchars($pageTitle) . ' - ' : ''; ?><?php echo htmlspecialchars($_sitioNombre); ?></title>
     
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -17,8 +45,8 @@
     <!-- Custom CSS -->
     <style>
         :root {
-            --primary-color: #667eea;
-            --secondary-color: #764ba2;
+            --primary-color: <?php echo htmlspecialchars($_colorPrimario); ?>;
+            --secondary-color: <?php echo htmlspecialchars($_colorSecundario); ?>;
             --sidebar-width: 250px;
         }
         
@@ -170,7 +198,12 @@
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
-            <i class="bi bi-water"></i> Sistema Albercas
+            <?php if (!empty($_sitioLogo)): ?>
+                <img src="<?php echo BASE_URL . htmlspecialchars($_sitioLogo); ?>" alt="<?php echo htmlspecialchars($_sitioNombre); ?>" style="max-height:40px; max-width:180px; object-fit:contain; margin-bottom:5px;"><br>
+            <?php else: ?>
+                <i class="bi bi-water"></i>
+            <?php endif; ?>
+            <?php echo htmlspecialchars($_sitioNombre); ?>
         </div>
         
         <nav class="sidebar-nav">
