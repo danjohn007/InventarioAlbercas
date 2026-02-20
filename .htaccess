@@ -26,9 +26,12 @@ RewriteEngine On
     Header always unset X-Powered-By
 </IfModule>
 
-# Si el archivo o directorio no existe, redirigir al index.php
+# Si el archivo no existe, redirigir al index.php
+# Note: the !-d check is intentionally omitted so that even if a directory
+# named after a route exists on the filesystem (e.g. 'configuraciones'),
+# the request is still routed to PHP rather than being blocked by Apache
+# with a 403 Forbidden (triggered by Options -Indexes).
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
 
 # Deshabilitar listado de directorios

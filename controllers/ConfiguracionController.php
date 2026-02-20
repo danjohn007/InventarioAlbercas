@@ -12,9 +12,19 @@ class ConfiguracionController {
         
         $db = Database::getInstance();
         
+        // Ensure the configuraciones table exists and has seed data.
+        // This handles the case where the database migration was never run
+        // on the production server.
+        $this->ensureConfiguracionesTable($db);
+        
         // Obtener todas las configuraciones agrupadas por categoría
-        $sql = "SELECT * FROM configuraciones ORDER BY categoria, clave";
-        $configuraciones = $db->query($sql)->fetchAll();
+        try {
+            $sql = "SELECT * FROM configuraciones ORDER BY categoria, clave";
+            $configuraciones = $db->query($sql)->fetchAll();
+        } catch (Exception $e) {
+            error_log("Error loading configuraciones: " . $e->getMessage());
+            $configuraciones = [];
+        }
         
         // Agrupar por categoría
         $config_grouped = [];
@@ -30,6 +40,61 @@ class ConfiguracionController {
         $content = ob_get_clean();
         
         require_once __DIR__ . '/../views/layouts/main.php';
+    }
+    
+    /**
+     * Ensure the configuraciones table exists with its seed data.
+     * Called on every visit to the index page so that production servers
+     * that never ran the SQL migration still get a working module.
+     * Uses a session flag so the CREATE/INSERT only runs once per session.
+     */
+    private function ensureConfiguracionesTable($db) {
+        // Skip if already verified this session
+        if (!empty($_SESSION['configuraciones_table_ok'])) {
+            return;
+        }
+
+        try {
+            $db->query("CREATE TABLE IF NOT EXISTS configuraciones (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                clave VARCHAR(100) NOT NULL UNIQUE,
+                valor TEXT,
+                tipo ENUM('texto','numero','booleano','json','archivo') DEFAULT 'texto',
+                descripcion TEXT,
+                categoria ENUM('general','apariencia','sistema','notificaciones') DEFAULT 'general',
+                fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                INDEX idx_clave (clave),
+                INDEX idx_categoria (categoria)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+            
+            // Seed default values (INSERT IGNORE preserves any existing custom values)
+            $db->query("INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion, categoria) VALUES
+                ('sitio_nombre',       'Sistema de Inventario Albercas',        'texto',    'Nombre del sitio web',                      'general'),
+                ('sitio_descripcion',  'Sistema de gestión integral para albercas','texto','Descripción del sitio',                    'general'),
+                ('sitio_logo',         '',                                       'archivo',  'Ruta del logotipo del sitio',               'apariencia'),
+                ('color_primario',     '#667eea',                                'texto',    'Color primario del sistema',                'apariencia'),
+                ('color_secundario',   '#764ba2',                                'texto',    'Color secundario del sistema',              'apariencia'),
+                ('moneda',             'MXN',                                    'texto',    'Moneda del sistema',                        'general'),
+                ('simbolo_moneda',     '$',                                      'texto',    'Símbolo de la moneda',                      'general'),
+                ('zona_horaria',       'America/Mexico_City',                    'texto',    'Zona horaria del sistema',                  'sistema'),
+                ('items_por_pagina',   '20',                                     'numero',   'Número de items por página en listados',    'sistema'),
+                ('formato_fecha',      'd/m/Y',                                  'texto',    'Formato de fecha para mostrar',             'sistema'),
+                ('formato_hora',       'H:i',                                    'texto',    'Formato de hora para mostrar',              'sistema'),
+                ('stock_minimo_alerta','5',                                       'numero',   'Cantidad mínima de stock para alertar',     'sistema'),
+                ('notificaciones_email','1',                                      'booleano', 'Activar notificaciones por email',          'notificaciones'),
+                ('stock_bajo_alerta',  '1',                                       'booleano', 'Activar alertas de stock bajo',             'notificaciones'),
+                ('email_admin',        'admin@albercas.com',                     'texto',    'Email del administrador del sistema',       'notificaciones'),
+                ('backup_automatico',  '1',                                       'booleano', 'Activar respaldos automáticos',             'sistema'),
+                ('dias_backup',        '7',                                       'numero',   'Días entre respaldos automáticos',          'sistema')");
+
+            // Mark as verified for the rest of this session
+            $_SESSION['configuraciones_table_ok'] = true;
+        } catch (Exception $e) {
+            // Non-fatal: log and continue. The index() method wraps its own
+            // SELECT in a try-catch so a missing table won't crash the page.
+            error_log("WARNING: Could not ensure configuraciones table: " . $e->getMessage());
+        }
     }
     
     /**
