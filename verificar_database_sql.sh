@@ -101,6 +101,33 @@ fi
 
 echo ""
 echo "═══════════════════════════════════════════════════════════"
+echo " FIX #1050 (VIEWS): CREATE OR REPLACE VIEW"
+echo "═══════════════════════════════════════════════════════════"
+
+# Verificar CREATE OR REPLACE VIEW
+COUNT_OR_REPLACE_VIEW=$(grep -c "CREATE OR REPLACE VIEW" database.sql)
+echo "   Encontrados: $COUNT_OR_REPLACE_VIEW sentencias con CREATE OR REPLACE VIEW"
+
+if [ "$COUNT_OR_REPLACE_VIEW" -eq 3 ]; then
+    print_ok "Las 3 vistas usan CREATE OR REPLACE VIEW"
+else
+    print_error "Se esperaban 3 vistas con CREATE OR REPLACE VIEW, se encontraron $COUNT_OR_REPLACE_VIEW"
+    exit 1
+fi
+
+# Verificar que no haya CREATE VIEW sin OR REPLACE
+PLAIN_CREATE_VIEW=$(grep -E "^CREATE\\s+VIEW\\s+" database.sql | grep -v "OR REPLACE" | wc -l)
+
+if [ "$PLAIN_CREATE_VIEW" -eq 0 ]; then
+    print_ok "No se encontraron CREATE VIEW sin OR REPLACE"
+else
+    print_error "Se encontraron $PLAIN_CREATE_VIEW sentencias CREATE VIEW sin OR REPLACE"
+    grep -n -E "^CREATE\\s+VIEW\\s+" database.sql | grep -v "OR REPLACE"
+    exit 1
+fi
+
+echo ""
+echo "═══════════════════════════════════════════════════════════"
 echo " VERIFICACIONES ADICIONALES"
 echo "═══════════════════════════════════════════════════════════"
 
@@ -134,9 +161,13 @@ echo ""
 echo "5. Tablas con INSERT IGNORE (10):"
 grep -o "INSERT IGNORE INTO [a-z_]*" database.sql | sed 's/INSERT IGNORE INTO /   ✓ /' | sort -u
 
+echo ""
+echo "6. Vistas con CREATE OR REPLACE (3):"
+grep -o "CREATE OR REPLACE VIEW [a-z_]*" database.sql | sed 's/CREATE OR REPLACE VIEW /   ✓ /' | sort
+
 # Verificar consistencia con database_updates.sql
 echo ""
-echo "6. Verificando consistencia con otros archivos..."
+echo "7. Verificando consistencia con otros archivos..."
 
 if [ -f "database_updates.sql" ]; then
     UPDATES_IF_NOT_EXISTS=$(grep -c "CREATE TABLE IF NOT EXISTS" database_updates.sql)
@@ -151,14 +182,15 @@ echo "║                 ✓ VERIFICACIÓN COMPLETA EXITOSA            ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
 echo "Resumen de Idempotencia:"
-echo "  • Fix #1050: 12 tablas con IF NOT EXISTS ✓"
+echo "  • Fix #1050 (Tablas): 12 tablas con IF NOT EXISTS ✓"
+echo "  • Fix #1050 (Vistas): 3 vistas con CREATE OR REPLACE ✓"
 echo "  • Fix #1062: 10 INSERT con IGNORE ✓"
 echo "  • Sintaxis SQL validada ✓"
 echo "  • database.sql es completamente idempotente ✓"
 echo ""
 echo "Características del script:"
 echo "  ✓ Puede ejecutarse múltiples veces sin errores"
-echo "  ✓ No genera errores #1050 (tabla ya existe)"
+echo "  ✓ No genera errores #1050 (tabla/vista ya existe)"
 echo "  ✓ No genera errores #1062 (entrada duplicada)"
 echo "  ✓ Preserva datos existentes"
 echo "  ✓ Seguro para uso en producción"
