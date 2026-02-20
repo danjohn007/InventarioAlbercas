@@ -147,25 +147,60 @@ class Auth {
         self::requireAuth();
         
         if (!self::can($modulo, $accion)) {
-            // Registrar el intento de acceso no autorizado
-            $userId = $_SESSION['user_id'] ?? 'desconocido';
-            $userRol = $_SESSION['user_rol'] ?? 'desconocido';
-            error_log("403 FORBIDDEN: Usuario ID $userId (rol: $userRol) intentó acceder a $modulo:$accion");
-            
-            // Registrar en auditoría si es posible
+            // Refresh permissions from DB to handle stale sessions
+            // (e.g. role was updated in DB after the user logged in)
             if (isset($_SESSION['user_id'])) {
-                self::registrarAuditoria(
-                    $_SESSION['user_id'], 
-                    'acceso_denegado', 
-                    $modulo, 
-                    null, 
-                    "Intento de acceso a: $modulo:$accion"
-                );
+                self::refreshUserPermissions($_SESSION['user_id']);
             }
             
-            http_response_code(403);
-            require_once ROOT_PATH . '/views/errors/403.php';
-            exit;
+            // Re-check after refresh
+            if (!self::can($modulo, $accion)) {
+                // Registrar el intento de acceso no autorizado
+                $userId = $_SESSION['user_id'] ?? 'desconocido';
+                $userRol = $_SESSION['user_rol'] ?? 'desconocido';
+                error_log("403 FORBIDDEN: Usuario ID $userId (rol: $userRol) intentó acceder a $modulo:$accion");
+                
+                // Registrar en auditoría si es posible
+                if (isset($_SESSION['user_id'])) {
+                    self::registrarAuditoria(
+                        $_SESSION['user_id'], 
+                        'acceso_denegado', 
+                        $modulo, 
+                        null, 
+                        "Intento de acceso a: $modulo:$accion"
+                    );
+                }
+                
+                http_response_code(403);
+                require_once ROOT_PATH . '/views/errors/403.php';
+                exit;
+            }
+        }
+    }
+    
+    /**
+     * Re-fetch the current user's role permissions from the database
+     * and update the session. Fixes stale sessions when a role is
+     * updated in the DB after the user has already logged in.
+     */
+    public static function refreshUserPermissions($userId) {
+        try {
+            $db = Database::getInstance();
+            $sql = "SELECT r.permisos FROM usuarios u 
+                    INNER JOIN roles r ON u.rol_id = r.id 
+                    WHERE u.id = :id AND u.activo = 1 AND r.activo = 1 LIMIT 1";
+            $result = $db->query($sql, ['id' => (int)$userId])->fetch();
+            
+            if ($result) {
+                $permisos = json_decode($result['permisos'], true);
+                if (is_array($permisos)) {
+                    $_SESSION['user_permisos'] = $permisos;
+                } else {
+                    error_log("WARNING: JSON de permisos inválido para el usuario ID $userId");
+                }
+            }
+        } catch (Exception $e) {
+            error_log("Error refreshing user permissions: " . $e->getMessage());
         }
     }
     
