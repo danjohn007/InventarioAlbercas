@@ -2,10 +2,11 @@
 
 Sistema web completo de administración de inventario, gastos y servicios para empresas de mantenimiento, reparación e instalación de albercas.
 
-> **✅ Última actualización (2026-02-19):** 
-> - **NUEVO:** Se resolvió el error #1062 "Entrada duplicada" agregando INSERT IGNORE. Ver [FIX_ERROR_1062_ENTRADA_DUPLICADA.md](FIX_ERROR_1062_ENTRADA_DUPLICADA.md)
-> - **NUEVO:** Se resolvió el error #1050 "La tabla ya existe" agregando IF NOT EXISTS. Ver [FIX_ERROR_1050_TABLA_EXISTE.md](FIX_ERROR_1050_TABLA_EXISTE.md)
-> - **NUEVO:** Se resolvió el error 403 en módulo Configuraciones agregando permisos faltantes. Ver [FIX_403_CONFIGURACIONES_RESUELTO.md](FIX_403_CONFIGURACIONES_RESUELTO.md)
+> **✅ Última actualización (2026-02-20):** 
+> - **NUEVO:** Se resolvió el error #1050 "La vista ya existe" agregando CREATE OR REPLACE VIEW. Ver [FIX_ERROR_1050_VISTAS.md](FIX_ERROR_1050_VISTAS.md)
+> - Se resolvió el error #1062 "Entrada duplicada" agregando INSERT IGNORE. Ver [FIX_ERROR_1062_ENTRADA_DUPLICADA.md](FIX_ERROR_1062_ENTRADA_DUPLICADA.md)
+> - Se resolvió el error #1050 "La tabla ya existe" agregando IF NOT EXISTS. Ver [FIX_ERROR_1050_TABLA_EXISTE.md](FIX_ERROR_1050_TABLA_EXISTE.md)
+> - Se resolvió el error 403 en módulo Configuraciones agregando permisos faltantes. Ver [FIX_403_CONFIGURACIONES_RESUELTO.md](FIX_403_CONFIGURACIONES_RESUELTO.md)
 > - Se resolvió el error 403 - FORBIDDEN con validación robusta de permisos. Ver [SOLUCION_403.md](SOLUCION_403.md)
 > - Se resolvió el error 403 en directorio /public. Ver [GUIA_RAPIDA.md](GUIA_RAPIDA.md)
 > - Se implementó solución para error open_basedir con archivo .user.ini. Ver [SOLUCION_OPEN_BASEDIR.md](SOLUCION_OPEN_BASEDIR.md)
@@ -393,9 +394,14 @@ Zonas horarias disponibles: [PHP Timezones](https://www.php.net/manual/es/timezo
 - Verifica que la base de datos exista
 
 ### Error: "#1050 - La tabla ya existe"
-- ✅ **RESUELTO**: El archivo `database.sql` ahora usa `IF NOT EXISTS`
+- ✅ **RESUELTO**: El archivo `database.sql` ahora usa `IF NOT EXISTS` para tablas
 - Puedes ejecutar el script múltiples veces sin errores
 - Ver documentación completa: [FIX_ERROR_1050_TABLA_EXISTE.md](FIX_ERROR_1050_TABLA_EXISTE.md)
+
+### Error: "#1050 - La vista ya existe"
+- ✅ **RESUELTO**: El archivo `database.sql` ahora usa `CREATE OR REPLACE VIEW`
+- Las vistas se actualizan automáticamente al re-ejecutar
+- Ver documentación completa: [FIX_ERROR_1050_VISTAS.md](FIX_ERROR_1050_VISTAS.md)
 
 ### Error: "#1062 - Entrada duplicada para la clave"
 - ✅ **RESUELTO**: El archivo `database.sql` ahora usa `INSERT IGNORE`
