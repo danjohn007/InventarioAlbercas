@@ -264,8 +264,13 @@ class ConfiguracionController {
             }
             
             // Actualizar cada configuración
+            // First, fetch all valid config keys to avoid updating arbitrary POST fields
+            $validKeys = $db->query("SELECT clave FROM configuraciones")->fetchAll();
+            $validKeySet = array_flip(array_column($validKeys, 'clave'));
+
             foreach ($_POST as $clave => $valor) {
                 if (in_array($clave, ['csrf_token', 'sitio_logo_current'])) continue;
+                if (!isset($validKeySet[$clave])) continue; // only update known config keys
                 
                 $sql = "UPDATE configuraciones SET valor = :valor WHERE clave = :clave";
                 $db->query($sql, [

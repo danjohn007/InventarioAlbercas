@@ -332,7 +332,7 @@ CREATE TABLE IF NOT EXISTS configuraciones (
     valor TEXT,
     tipo ENUM('texto', 'numero', 'booleano', 'json', 'archivo') DEFAULT 'texto',
     descripcion TEXT,
-    categoria ENUM('general', 'apariencia', 'sistema', 'notificaciones') DEFAULT 'general',
+    categoria ENUM('general', 'apariencia', 'sistema', 'notificaciones', 'contacto', 'integraciones') DEFAULT 'general',
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_clave (clave),
@@ -357,7 +357,48 @@ INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion, categoria) 
 ('stock_bajo_alerta', '1', 'booleano', 'Activar alertas de stock bajo', 'notificaciones'),
 ('email_admin', 'admin@albercas.com', 'texto', 'Email del administrador del sistema', 'notificaciones'),
 ('backup_automatico', '1', 'booleano', 'Activar respaldos automáticos', 'sistema'),
-('dias_backup', '7', 'numero', 'Días entre respaldos automáticos', 'sistema');
+('dias_backup', '7', 'numero', 'Días entre respaldos automáticos', 'sistema'),
+-- Email / SMTP
+('email_enabled',               '0',                                  'booleano', 'Activar envío de correos electrónicos',                'notificaciones'),
+('smtp_host',                   '',                                   'texto',    'Servidor SMTP (ej: smtp.gmail.com)',                   'notificaciones'),
+('smtp_port',                   '587',                                'numero',   'Puerto del servidor SMTP',                            'notificaciones'),
+('smtp_encryption',             'tls',                                'texto',    'Cifrado SMTP: tls, ssl o none',                       'notificaciones'),
+('smtp_username',               '',                                   'texto',    'Usuario o email de autenticación SMTP',               'notificaciones'),
+('smtp_password',               '',                                   'texto',    'Contraseña de autenticación SMTP',                    'notificaciones'),
+('email_from_address',          '',                                   'texto',    'Dirección de correo del remitente (From)',             'notificaciones'),
+('email_from_name',             'Sistema Inventario Albercas',        'texto',    'Nombre visible del remitente de correos',             'notificaciones'),
+-- Contacto & Horarios
+('telefono_principal',          '',                                   'texto',    'Teléfono de contacto principal',                      'contacto'),
+('telefono_whatsapp',           '',                                   'texto',    'Número de WhatsApp para contacto',                    'contacto'),
+('telefono_emergencias',        '',                                   'texto',    'Teléfono de emergencias 24h',                         'contacto'),
+('horario_lunes_viernes',       '09:00 - 18:00',                      'texto',    'Horario de atención lunes a viernes',                 'contacto'),
+('horario_sabado',              '09:00 - 14:00',                      'texto',    'Horario de atención sábado',                          'contacto'),
+('horario_domingo',             'Cerrado',                            'texto',    'Horario de atención domingo',                         'contacto'),
+('direccion_contacto',          '',                                   'texto',    'Dirección física de la empresa',                      'contacto'),
+-- PayPal
+('paypal_mode',                 'sandbox',                            'texto',    'Modo de PayPal: sandbox o live',                      'integraciones'),
+('paypal_email',                '',                                   'texto',    'Email principal de la cuenta PayPal',                 'integraciones'),
+('paypal_client_id',            '',                                   'texto',    'Client ID de la API de PayPal',                       'integraciones'),
+('paypal_secret',               '',                                   'texto',    'Clave secreta (Secret) de la API de PayPal',          'integraciones'),
+-- API QR
+('qr_api_provider',             '',                                   'texto',    'Proveedor de API para generación masiva de QR',       'integraciones'),
+('qr_api_key',                  '',                                   'texto',    'Clave API para generación de QR masivos',             'integraciones'),
+('qr_api_url',                  '',                                   'texto',    'URL del endpoint de la API QR',                       'integraciones'),
+-- IoT – Shelly Cloud
+('shelly_api_url',              'https://shelly-12-eu.shelly.cloud',  'texto',    'URL base de la API de Shelly Cloud',                  'integraciones'),
+('shelly_account_id',           '',                                   'texto',    'ID de cuenta en Shelly Cloud',                        'integraciones'),
+('shelly_api_key',              '',                                   'texto',    'API Key de Shelly Cloud',                             'integraciones'),
+-- IoT – HikVision
+('hikvision_device_ip',         '',                                   'texto',    'Dirección IP del dispositivo HikVision',              'integraciones'),
+('hikvision_username',          'admin',                              'texto',    'Usuario de acceso a HikVision',                       'integraciones'),
+('hikvision_password',          '',                                   'texto',    'Contraseña de acceso a HikVision',                    'integraciones'),
+-- Chatbot WhatsApp
+('whatsapp_provider',           'meta',                               'texto',    'Proveedor del chatbot de WhatsApp (meta, twilio, etc)','integraciones'),
+('whatsapp_phone_number',       '',                                   'texto',    'Número de teléfono de WhatsApp Business',             'integraciones'),
+('whatsapp_api_key',            '',                                   'texto',    'API Key para el chatbot de WhatsApp',                 'integraciones'),
+('whatsapp_access_token',       '',                                   'texto',    'Token de acceso de la WhatsApp Business API',         'integraciones'),
+('whatsapp_webhook_verify_token','',                                  'texto',    'Token de verificación del webhook de WhatsApp',       'integraciones'),
+('whatsapp_phone_number_id',    '',                                   'texto',    'ID del número de teléfono en Meta Business API',      'integraciones');
 
 -- ============================================
 -- VISTAS ÚTILES

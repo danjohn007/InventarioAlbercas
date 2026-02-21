@@ -74,7 +74,20 @@ INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion, categoria) 
 ('whatsapp_phone_number_id',     '',                                    'texto',    'ID del número de teléfono en Meta Business API',       'integraciones');
 
 -- ============================================
--- 8. Verificación de resultados
+-- 8. Configuraciones de Email / SMTP
+-- ============================================
+INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion, categoria) VALUES
+('email_enabled',               '0',                                   'booleano', 'Activar envío de correos electrónicos',                'notificaciones'),
+('smtp_host',                   '',                                    'texto',    'Servidor SMTP (ej: smtp.gmail.com)',                   'notificaciones'),
+('smtp_port',                   '587',                                 'numero',   'Puerto del servidor SMTP',                            'notificaciones'),
+('smtp_encryption',             'tls',                                 'texto',    'Cifrado SMTP: tls, ssl o none',                       'notificaciones'),
+('smtp_username',               '',                                    'texto',    'Usuario o email de autenticación SMTP',               'notificaciones'),
+('smtp_password',               '',                                    'texto',    'Contraseña de autenticación SMTP',                    'notificaciones'),
+('email_from_address',          '',                                    'texto',    'Dirección de correo del remitente (From)',             'notificaciones'),
+('email_from_name',             'Sistema Inventario Albercas',         'texto',    'Nombre visible del remitente de correos',             'notificaciones');
+
+-- ============================================
+-- 9. Verificación de resultados
 -- ============================================
 SELECT categoria, COUNT(*) AS total
 FROM configuraciones
