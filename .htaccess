@@ -1,15 +1,8 @@
-# Habilitar reescritura de URLs
-# Options +FollowSymLinks is required by mod_rewrite on LiteSpeed / cPanel hosting.
-# Without it the RewriteEngine is silently ignored for directory requests,
-# causing the server to return HTTP 403 before PHP ever runs.
-Options +FollowSymLinks
-
-# Tell the server which file to use as a directory index.
-# When a path that matches a real directory on disk is requested (e.g.
-# /configuraciones) the server will try to serve its index.php instead
-# of generating a 403 (Options -Indexes) or listing the directory.
+# -----------------------------------------------------------------------
+# URL Rewriting
+# -----------------------------------------------------------------------
+Options +FollowSymLinks -Indexes
 DirectoryIndex index.php
-
 RewriteEngine On
 
 # Configuración de PHP (intentar sobrescribir open_basedir si es posible)
@@ -37,16 +30,9 @@ RewriteEngine On
     Header always unset X-Powered-By
 </IfModule>
 
-# Si el archivo no existe, redirigir al index.php
-# Note: the !-d check is intentionally omitted so that even if a directory
-# named after a route exists on the filesystem (e.g. 'configuraciones'),
-# the request is still routed to PHP rather than being blocked by Apache
-# with a 403 Forbidden (triggered by Options -Indexes).
+# Route all non-file requests through the PHP application router.
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
-
-# Deshabilitar listado de directorios
-Options -Indexes
 
 # Proteger archivos de configuración
 <FilesMatch "^\.">
