@@ -323,25 +323,10 @@ class ReportesController {
     // ============================================
     
     /**
-     * Verifica que las dependencias de Composer estén instaladas.
-     * Si no lo están, redirige al módulo de reportes indicado con un mensaje de error.
-     *
-     * @param string $modulo  Nombre del módulo (inventario|gastos|servicios)
-     */
-    private function requireComposerDependencies($modulo) {
-        if (!file_exists(__DIR__ . '/../vendor/autoload.php')) {
-            $_SESSION['error_message'] = 'Las dependencias de exportación no están instaladas. Ejecute "composer install" en el servidor.';
-            header('Location: ' . BASE_URL . 'reportes/' . $modulo);
-            exit;
-        }
-    }
-    
-    /**
      * Exportar Reporte de Inventario a PDF
      */
     public function exportarInventarioPDF() {
         Auth::requirePermission('reportes', 'exportar');
-        $this->requireComposerDependencies('inventario');
         
         require_once __DIR__ . '/../utils/exports/PdfExporter.php';
         
@@ -424,7 +409,6 @@ class ReportesController {
      */
     public function exportarInventarioExcel() {
         Auth::requirePermission('reportes', 'exportar');
-        $this->requireComposerDependencies('inventario');
         
         require_once __DIR__ . '/../utils/exports/ExcelExporter.php';
         
@@ -496,7 +480,6 @@ class ReportesController {
      */
     public function exportarGastosPDF() {
         Auth::requirePermission('reportes', 'exportar');
-        $this->requireComposerDependencies('gastos');
         
         require_once __DIR__ . '/../utils/exports/PdfExporter.php';
         
@@ -566,7 +549,6 @@ class ReportesController {
      */
     public function exportarGastosExcel() {
         Auth::requirePermission('reportes', 'exportar');
-        $this->requireComposerDependencies('gastos');
         
         require_once __DIR__ . '/../utils/exports/ExcelExporter.php';
         
@@ -627,7 +609,6 @@ class ReportesController {
      */
     public function exportarServiciosPDF() {
         Auth::requirePermission('reportes', 'exportar');
-        $this->requireComposerDependencies('servicios');
         
         require_once __DIR__ . '/../utils/exports/PdfExporter.php';
         
@@ -703,7 +684,6 @@ class ReportesController {
      */
     public function exportarServiciosExcel() {
         Auth::requirePermission('reportes', 'exportar');
-        $this->requireComposerDependencies('servicios');
         
         require_once __DIR__ . '/../utils/exports/ExcelExporter.php';
         
