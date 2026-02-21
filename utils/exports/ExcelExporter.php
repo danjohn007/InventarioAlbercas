@@ -63,10 +63,12 @@ class ExcelExporter {
     public function download($filename = 'reporte.xlsx') {
         // Sanitize filename: strip path separators, control chars and header-injection chars
         $filename = preg_replace('/[\r\n\t"\'\\\\\/]/', '_', basename($filename));
-        // El formato XML Spreadsheet 2003 usa extensión .xls
-        $filename = preg_replace('/\.xlsx?$/i', '.xls', $filename);
+        // El formato XML Spreadsheet 2003 debe usar la extensión .xml para evitar
+        // la advertencia de Excel "el formato y la extensión no coinciden" que
+        // aparece cuando el archivo tiene extensión .xls pero contiene XML.
+        $filename = preg_replace('/\.xlsx?$/i', '.xml', $filename);
 
-        header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
+        header('Content-Type: application/xml; charset=UTF-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         header('Cache-Control: max-age=0');
         header('Pragma: cache');
