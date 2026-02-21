@@ -458,13 +458,6 @@ $router->get('/configuraciones/descargarBackup/(.+)', function($filename) {
     $controller->descargarBackup($filename);
 });
 
-$router->get('/configuraciones/errores', function() {
-    Auth::requirePermission('configuraciones', 'leer');
-    loadController('ConfiguracionController');
-    $controller = new ConfiguracionController();
-    $controller->errores();
-});
-
 // Rutas de ingresos
 $router->get('/ingresos', function() {
     Auth::requirePermission('ingresos', 'leer');

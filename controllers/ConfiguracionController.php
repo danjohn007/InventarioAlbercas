@@ -5,18 +5,19 @@
 class ConfiguracionController {
     
     /**
-     * Vista principal de configuraciones globales
+     * Vista principal de configuraciones
      */
     public function index() {
         Auth::requirePermission('configuraciones', 'leer');
         
         $db = Database::getInstance();
         
-        // Ensure the configuraciones table exists and has all seed data.
+        // Ensure the configuraciones table exists and has seed data.
+        // This handles the case where the database migration was never run
+        // on the production server.
         $this->ensureConfiguracionesTable($db);
-        $this->ensureExtendedConfig($db);
         
-        // Obtener todas las configuraciones
+        // Obtener todas las configuraciones agrupadas por categoría
         try {
             $sql = "SELECT * FROM configuraciones ORDER BY categoria, clave";
             $configuraciones = $db->query($sql)->fetchAll();
@@ -25,31 +26,13 @@ class ConfiguracionController {
             $configuraciones = [];
         }
         
-        // Flat array keyed by clave for easy access in view
-        $config_all = [];
-        foreach ($configuraciones as $config) {
-            $config_all[$config['clave']] = $config['valor'];
-        }
-        
-        // Agrupar por categoría (backwards compat)
+        // Agrupar por categoría
         $config_grouped = [];
         foreach ($configuraciones as $config) {
             $config_grouped[$config['categoria']][] = $config;
         }
         
-        // Recent audit log entries for Bitácora tab (last 10)
-        try {
-            $auditLogs = $db->query(
-                "SELECT a.*, u.nombre, u.usuario 
-                 FROM auditoria a 
-                 LEFT JOIN usuarios u ON a.usuario_id = u.id 
-                 ORDER BY a.fecha_creacion DESC LIMIT 10"
-            )->fetchAll();
-        } catch (Exception $e) {
-            $auditLogs = [];
-        }
-        
-        $pageTitle = 'Configuraciones Globales';
+        $pageTitle = 'Configuraciones del Sistema';
         $activeMenu = 'configuraciones';
         
         ob_start();
@@ -115,94 +98,6 @@ class ConfiguracionController {
     }
     
     /**
-     * Ensure extended config keys (new module features) exist.
-     * Expands the categoria ENUM and seeds new configuration rows.
-     */
-    private function ensureExtendedConfig($db) {
-        if (!empty($_SESSION['configuraciones_extended_ok'])) {
-            return;
-        }
-        try {
-            // Expand the categoria ENUM to include new categories
-            $db->query("ALTER TABLE configuraciones MODIFY COLUMN categoria 
-                ENUM('general','apariencia','sistema','notificaciones','contacto','integraciones') DEFAULT 'general'");
-        } catch (Exception $e) {
-            error_log("INFO: Could not expand configuraciones ENUM: " . $e->getMessage());
-        }
-        try {
-            $db->query("INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion, categoria) VALUES
-                ('telefono_principal',           '',                                    'texto',    'Teléfono de contacto principal',                       'contacto'),
-                ('telefono_whatsapp',            '',                                    'texto',    'Número de WhatsApp para contacto',                     'contacto'),
-                ('telefono_emergencias',         '',                                    'texto',    'Teléfono de emergencias 24h',                          'contacto'),
-                ('horario_lunes_viernes',        '09:00 - 18:00',                       'texto',    'Horario de atención lunes a viernes',                  'contacto'),
-                ('horario_sabado',               '09:00 - 14:00',                       'texto',    'Horario de atención sábado',                           'contacto'),
-                ('horario_domingo',              'Cerrado',                             'texto',    'Horario de atención domingo',                          'contacto'),
-                ('direccion_contacto',           '',                                    'texto',    'Dirección física de la empresa',                       'contacto'),
-                ('paypal_mode',                  'sandbox',                             'texto',    'Modo de PayPal: sandbox o live',                       'integraciones'),
-                ('paypal_email',                 '',                                    'texto',    'Email principal de la cuenta PayPal',                  'integraciones'),
-                ('paypal_client_id',             '',                                    'texto',    'Client ID de la API de PayPal',                        'integraciones'),
-                ('paypal_secret',                '',                                    'texto',    'Clave secreta (Secret) de la API de PayPal',           'integraciones'),
-                ('qr_api_provider',              '',                                    'texto',    'Proveedor de API para generación masiva de QR',        'integraciones'),
-                ('qr_api_key',                   '',                                    'texto',    'Clave API para generación de QR masivos',              'integraciones'),
-                ('qr_api_url',                   '',                                    'texto',    'URL del endpoint de la API QR',                        'integraciones'),
-                ('shelly_api_url',               'https://shelly-12-eu.shelly.cloud',  'texto',    'URL base de la API de Shelly Cloud',                   'integraciones'),
-                ('shelly_account_id',            '',                                    'texto',    'ID de cuenta en Shelly Cloud',                         'integraciones'),
-                ('shelly_api_key',               '',                                    'texto',    'API Key de Shelly Cloud',                              'integraciones'),
-                ('hikvision_device_ip',          '',                                    'texto',    'Dirección IP del dispositivo HikVision',               'integraciones'),
-                ('hikvision_username',           'admin',                               'texto',    'Usuario de acceso a HikVision',                        'integraciones'),
-                ('hikvision_password',           '',                                    'texto',    'Contraseña de acceso a HikVision',                     'integraciones'),
-                ('whatsapp_provider',            'meta',                                'texto',    'Proveedor del chatbot de WhatsApp (meta, twilio, etc)','integraciones'),
-                ('whatsapp_phone_number',        '',                                    'texto',    'Número de teléfono de WhatsApp Business',              'integraciones'),
-                ('whatsapp_api_key',             '',                                    'texto',    'API Key para el chatbot de WhatsApp',                  'integraciones'),
-                ('whatsapp_access_token',        '',                                    'texto',    'Token de acceso de la WhatsApp Business API',          'integraciones'),
-                ('whatsapp_webhook_verify_token','',                                    'texto',    'Token de verificación del webhook de WhatsApp',        'integraciones'),
-                ('whatsapp_phone_number_id',     '',                                    'texto',    'ID del número de teléfono en Meta Business API',       'integraciones')");
-            $_SESSION['configuraciones_extended_ok'] = true;
-        } catch (Exception $e) {
-            error_log("WARNING: Could not seed extended configuraciones: " . $e->getMessage());
-        }
-    }
-
-    /**
-     * Registro de Errores del sistema
-     */
-    public function errores() {
-        Auth::requirePermission('configuraciones', 'leer');
-
-        $errorLogPath    = ini_get('error_log');
-        $errorEntries    = [];
-        $errorLogReadable = false;
-
-        if ($errorLogPath && file_exists($errorLogPath) && is_readable($errorLogPath)) {
-            $errorLogReadable = true;
-            $fp = fopen($errorLogPath, 'r');
-            if ($fp) {
-                $all = [];
-                while (!feof($fp)) {
-                    $line = fgets($fp);
-                    if ($line !== false && trim($line) !== '') {
-                        // Escape here; the view outputs these entries directly
-                        $all[] = htmlspecialchars(trim($line), ENT_QUOTES, 'UTF-8');
-                    }
-                }
-                fclose($fp);
-                // Keep only the last 500 entries, most recent first
-                $errorEntries = array_reverse(array_slice($all, -500));
-                unset($all);
-            }
-        }
-
-        $pageTitle = 'Registro de Errores';
-        $activeMenu = 'configuraciones';
-
-        ob_start();
-        require_once __DIR__ . '/../views/configuraciones/errores.php';
-        $content = ob_get_clean();
-
-        require_once __DIR__ . '/../views/layouts/main.php';
-    }
-
-    /**
      * Actualizar configuraciones
      */
     public function actualizar() {
@@ -234,7 +129,7 @@ class ConfiguracionController {
             
             // Actualizar cada configuración
             foreach ($_POST as $clave => $valor) {
-                if (in_array($clave, ['csrf_token', 'sitio_logo_current'])) continue;
+                if ($clave === 'csrf_token') continue;
                 
                 $sql = "UPDATE configuraciones SET valor = :valor WHERE clave = :clave";
                 $db->query($sql, [

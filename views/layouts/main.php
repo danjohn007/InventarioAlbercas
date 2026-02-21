@@ -308,8 +308,8 @@ if (!empty($_sitioLogo) && !preg_match('/^uploads\/[a-zA-Z0-9_\-\.]+\.(png|jpg|j
                 <?php if (Auth::can('configuraciones', 'leer')): ?>
                 <li class="nav-item">
                     <a href="<?php echo BASE_URL; ?>configuraciones" class="nav-link <?php echo $activeMenu == 'configuraciones' ? 'active' : ''; ?>">
-                        <i class="bi bi-gear-wide-connected"></i>
-                        <span>Configuraciones Globales</span>
+                        <i class="bi bi-gear"></i>
+                        <span>Configuraciones</span>
                     </a>
                 </li>
                 <?php endif; ?>
