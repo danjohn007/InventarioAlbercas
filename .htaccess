@@ -1,16 +1,38 @@
-# Habilitar reescritura de URLs
-# Options +FollowSymLinks is required by mod_rewrite on LiteSpeed / cPanel hosting.
-# Without it the RewriteEngine is silently ignored for directory requests,
-# causing the server to return HTTP 403 before PHP ever runs.
-Options +FollowSymLinks
+# -----------------------------------------------------------------------
+# OPTIONS
+# Combine FollowSymLinks (required for mod_rewrite on LiteSpeed/cPanel)
+# and -Indexes (disable directory listing) into a SINGLE Options directive.
+# Having them on separate lines can confuse LiteSpeed: it may process the
+# first "+FollowSymLinks" and then the later "-Indexes" in isolation,
+# sometimes evaluating -Indexes BEFORE checking for a DirectoryIndex file
+# and immediately returning 403 for real directories (e.g. /configuraciones).
+# A single combined line avoids that race condition.
+# -----------------------------------------------------------------------
+Options +FollowSymLinks -Indexes
 
 # Tell the server which file to use as a directory index.
 # When a path that matches a real directory on disk is requested (e.g.
-# /configuraciones) the server will try to serve its index.php instead
-# of generating a 403 (Options -Indexes) or listing the directory.
+# /configuraciones) the server will serve its index.php stub instead of
+# generating a 403 or listing the directory.
 DirectoryIndex index.php
 
 RewriteEngine On
+
+# -----------------------------------------------------------------------
+# LiteSpeed / cPanel SPECIFIC FIX: explicit early rule for directories
+# that are also app routes.
+#
+# On LiteSpeed, requests for a real filesystem directory can be blocked
+# (HTTP 403) before the general RewriteRule below is evaluated, because
+# LiteSpeed resolves the -Indexes restriction at directory-check time, not
+# at rewrite time.  Adding an unconditional rule that rewrites the bare
+# directory URL to a concrete FILE (the stub index.php inside it) prevents
+# LiteSpeed from ever reaching the -Indexes 403 path.
+#
+# If more route-directories are added in the future (e.g. /usuarios/),
+# add a matching line here.
+# -----------------------------------------------------------------------
+RewriteRule ^configuraciones/?$ configuraciones/index.php [L]
 
 # Configuración de PHP (intentar sobrescribir open_basedir si es posible)
 # Nota: Esto puede no funcionar en todos los servidores si está bloqueado por el admin
@@ -40,13 +62,13 @@ RewriteEngine On
 # Si el archivo no existe, redirigir al index.php
 # Note: the !-d check is intentionally omitted so that even if a directory
 # named after a route exists on the filesystem (e.g. 'configuraciones'),
-# the request is still routed to PHP rather than being blocked by Apache
-# with a 403 Forbidden (triggered by Options -Indexes).
+# the request is still routed to PHP. The explicit RewriteRule added above
+# handles the 'configuraciones' directory specifically; the general rule
+# below catches all other non-file requests.
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
 
-# Deshabilitar listado de directorios
-Options -Indexes
+# (Directory listing is disabled by the combined Options directive at top)
 
 # Proteger archivos de configuración
 <FilesMatch "^\.">

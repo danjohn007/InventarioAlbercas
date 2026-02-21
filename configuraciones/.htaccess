@@ -1,0 +1,23 @@
+# Per-directory .htaccess for the /configuraciones application route.
+#
+# WHY THIS FILE EXISTS
+# --------------------
+# A real 'configuraciones/' directory exists on the filesystem.  On
+# LiteSpeed / cPanel shared hosting, "Options -Indexes" (set in the parent
+# .htaccess) is sometimes evaluated during the directory-resolution stage
+# BEFORE mod_rewrite is allowed to run.  This causes the server to return
+# HTTP 403 Forbidden even though:
+#   - The parent .htaccess already declares "DirectoryIndex index.php", AND
+#   - A valid index.php stub exists inside this directory.
+#
+# Adding this per-directory .htaccess ensures LiteSpeed reads and applies
+# "DirectoryIndex index.php" while processing THIS directory specifically,
+# which causes it to serve the stub file instead of returning 403.
+#
+# IMPORTANT: Do not add RewriteEngine rules here – all URL routing is
+# handled by the root index.php router.  Sub-paths such as
+# /configuraciones/auditoria are NOT real directories and are therefore
+# handled cleanly by the parent .htaccess RewriteRule.
+
+Options +FollowSymLinks
+DirectoryIndex index.php
