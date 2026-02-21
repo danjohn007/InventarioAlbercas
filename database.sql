@@ -324,6 +324,42 @@ INSERT IGNORE INTO gastos (categoria_id, concepto, descripcion, monto, fecha_gas
 (3, 'Viáticos', 'Comida durante reparación', 180.00, '2024-01-20', 'efectivo', 2, 3);
 
 -- ============================================
+-- TABLA: configuraciones
+-- ============================================
+CREATE TABLE IF NOT EXISTS configuraciones (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    clave VARCHAR(100) NOT NULL UNIQUE,
+    valor TEXT,
+    tipo ENUM('texto', 'numero', 'booleano', 'json', 'archivo') DEFAULT 'texto',
+    descripcion TEXT,
+    categoria ENUM('general', 'apariencia', 'sistema', 'notificaciones') DEFAULT 'general',
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_clave (clave),
+    INDEX idx_categoria (categoria)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Datos iniciales de configuraciones
+INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion, categoria) VALUES
+('sitio_nombre', 'Sistema de Inventario Albercas', 'texto', 'Nombre del sitio web', 'general'),
+('sitio_descripcion', 'Sistema de gestión integral para albercas', 'texto', 'Descripción del sitio', 'general'),
+('sitio_logo', '', 'archivo', 'Ruta del logotipo del sitio (uploads/logo.png)', 'apariencia'),
+('color_primario', '#667eea', 'texto', 'Color primario del sistema (gradiente inicio)', 'apariencia'),
+('color_secundario', '#764ba2', 'texto', 'Color secundario del sistema (gradiente fin)', 'apariencia'),
+('moneda', 'MXN', 'texto', 'Moneda del sistema (MXN, USD, etc)', 'general'),
+('simbolo_moneda', '$', 'texto', 'Símbolo de la moneda', 'general'),
+('zona_horaria', 'America/Mexico_City', 'texto', 'Zona horaria del sistema', 'sistema'),
+('items_por_pagina', '20', 'numero', 'Número de items por página en listados', 'sistema'),
+('formato_fecha', 'd/m/Y', 'texto', 'Formato de fecha para mostrar (d/m/Y, Y-m-d, etc)', 'sistema'),
+('formato_hora', 'H:i', 'texto', 'Formato de hora para mostrar', 'sistema'),
+('stock_minimo_alerta', '5', 'numero', 'Cantidad mínima de stock para alertar', 'sistema'),
+('notificaciones_email', '1', 'booleano', 'Activar notificaciones por email', 'notificaciones'),
+('stock_bajo_alerta', '1', 'booleano', 'Activar alertas de stock bajo', 'notificaciones'),
+('email_admin', 'admin@albercas.com', 'texto', 'Email del administrador del sistema', 'notificaciones'),
+('backup_automatico', '1', 'booleano', 'Activar respaldos automáticos', 'sistema'),
+('dias_backup', '7', 'numero', 'Días entre respaldos automáticos', 'sistema');
+
+-- ============================================
 -- VISTAS ÚTILES
 -- ============================================
 
