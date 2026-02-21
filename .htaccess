@@ -1,35 +1,9 @@
 # -----------------------------------------------------------------------
-# OPTIONS
-# Combine FollowSymLinks (required for mod_rewrite on LiteSpeed/cPanel)
-# and -Indexes (disable directory listing) into a SINGLE Options directive.
-# Having them on separate lines can confuse LiteSpeed: it may process the
-# first "+FollowSymLinks" and then the later "-Indexes" in isolation,
-# sometimes evaluating -Indexes BEFORE checking for a DirectoryIndex file
-# and immediately returning 403 for real directories (e.g. /configuraciones).
-# A single combined line avoids that race condition.
+# URL Rewriting
 # -----------------------------------------------------------------------
 Options +FollowSymLinks -Indexes
-
-# Tell the server which file to use as a directory index.
-# When a path that matches a real directory on disk is requested (e.g.
-# /configuraciones) the server will serve its index.php stub instead of
-# generating a 403 or listing the directory.
 DirectoryIndex index.php
-
 RewriteEngine On
-
-# -----------------------------------------------------------------------
-# LiteSpeed / cPanel SPECIFIC FIX: explicit early rule for directories
-# that are also app routes.
-#
-# Change: rewrite directly to the PHP entry-point (index.php?url=…)
-# instead of to configuraciones/index.php.  Rewriting to a path inside
-# the blocked directory did not help because LiteSpeed may still apply
-# the -Indexes restriction to the target directory.  Rewriting to a
-# plain FILE (index.php at the document root) bypasses directory-access
-# checks entirely.
-# -----------------------------------------------------------------------
-RewriteRule ^configuraciones/?$ index.php?url=configuraciones [L,QSA]
 
 # Configuración de PHP (intentar sobrescribir open_basedir si es posible)
 # Nota: Esto puede no funcionar en todos los servidores si está bloqueado por el admin
@@ -56,16 +30,9 @@ RewriteRule ^configuraciones/?$ index.php?url=configuraciones [L,QSA]
     Header always unset X-Powered-By
 </IfModule>
 
-# Si el archivo no existe, redirigir al index.php
-# Note: the !-d check is intentionally omitted so that even if a directory
-# named after a route exists on the filesystem (e.g. 'configuraciones'),
-# the request is still routed to PHP. The explicit RewriteRule added above
-# handles the 'configuraciones' directory specifically; the general rule
-# below catches all other non-file requests.
+# Route all non-file requests through the PHP application router.
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
-
-# (Directory listing is disabled by the combined Options directive at top)
 
 # Proteger archivos de configuración
 <FilesMatch "^\.">
