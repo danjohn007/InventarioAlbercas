@@ -93,33 +93,51 @@ class ExcelExporter {
 
     private function buildXml() {
         $xml  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-        $xml .= "<Workbook xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\"\n";
-        $xml .= " xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\">\n";
+        // Processing instruction helps Excel/LibreOffice recognise the format
+        $xml .= "<?mso-application progid=\"Excel.Sheet\"?>\n";
+        // Full namespace declarations required by the XML Spreadsheet 2003 spec
+        $xml .= "<Workbook\n";
+        $xml .= " xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\"\n";
+        $xml .= " xmlns:o=\"urn:schemas-microsoft-com:office:office\"\n";
+        $xml .= " xmlns:x=\"urn:schemas-microsoft-com:office:excel\"\n";
+        $xml .= " xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\"\n";
+        $xml .= " xmlns:html=\"http://www.w3.org/TR/REC-html40\">\n";
 
         // Estilos
+        // NOTE: ss:FontName (not ss:Name) is the correct attribute per the spec.
+        // Using ss:Name causes "Error: Estilo" in LibreOffice / Excel.
         $xml .= "<Styles>\n";
+        // Default style is required by the XML Spreadsheet 2003 specification
+        $xml .= '<Style ss:ID="Default" ss:Name="Normal">'
+              . '<Alignment ss:Vertical="Bottom"/>'
+              . '<Borders/>'
+              . '<Font ss:FontName="Arial" ss:Size="10" ss:Color="#000000"/>'
+              . '<Interior/>'
+              . '<NumberFormat/>'
+              . '<Protection/>'
+              . "</Style>\n";
         $xml .= '<Style ss:ID="title">'
-              . '<Font ss:Bold="1" ss:Size="16" ss:Name="Arial"/>'
+              . '<Font ss:Bold="1" ss:Size="16" ss:FontName="Arial"/>'
               . '<Alignment ss:Horizontal="Center"/>'
               . "</Style>\n";
         $xml .= '<Style ss:ID="subtitle">'
-              . '<Font ss:Size="10" ss:Name="Arial" ss:Italic="1"/>'
+              . '<Font ss:Size="10" ss:FontName="Arial" ss:Italic="1"/>'
               . '<Alignment ss:Horizontal="Center"/>'
               . "</Style>\n";
         $xml .= '<Style ss:ID="section">'
-              . '<Font ss:Bold="1" ss:Size="12" ss:Name="Arial"/>'
+              . '<Font ss:Bold="1" ss:Size="12" ss:FontName="Arial"/>'
               . "</Style>\n";
         $xml .= '<Style ss:ID="label">'
-              . '<Font ss:Bold="1" ss:Name="Arial"/>'
+              . '<Font ss:Bold="1" ss:FontName="Arial"/>'
               . '<Interior ss:Color="#EEEEEE" ss:Pattern="Solid"/>'
               . "</Style>\n";
         $xml .= '<Style ss:ID="header">'
-              . '<Font ss:Bold="1" ss:Color="#FFFFFF" ss:Name="Arial"/>'
+              . '<Font ss:Bold="1" ss:Color="#FFFFFF" ss:FontName="Arial"/>'
               . '<Interior ss:Color="#667EEA" ss:Pattern="Solid"/>'
               . '<Alignment ss:Horizontal="Center"/>'
               . "</Style>\n";
         $xml .= '<Style ss:ID="normal">'
-              . '<Font ss:Name="Arial"/>'
+              . '<Font ss:FontName="Arial"/>'
               . '<Alignment ss:WrapText="1"/>'
               . "</Style>\n";
         $xml .= "</Styles>\n";

@@ -175,10 +175,6 @@ class PdfExporter {
 
         echo $this->html;
 
-        // Disparar diálogo de impresión automáticamente con breve retardo
-        // (300 ms) para que el contenido cargue y lectores de pantalla puedan
-        // procesar la página antes de que se abra el diálogo.
-        echo '<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},300);});</script>';
         echo '</body></html>';
         exit;
     }
