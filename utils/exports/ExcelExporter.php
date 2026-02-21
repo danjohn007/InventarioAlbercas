@@ -2,178 +2,190 @@
 /**
  * Clase Helper para exportar reportes a Excel
  *
- * Implementación pura en PHP usando el formato XML Spreadsheet 2003.
- * No requiere Composer ni ninguna librería externa.
- * Los archivos generados (.xls XML) son abiertos correctamente por
- * Microsoft Excel, LibreOffice Calc y Google Sheets.
+ * Implementación pura en PHP usando HTML con extensión .xls.
+ * Esta es la técnica más compatible para exportar a Excel sin Composer:
+ * - Microsoft Excel (Windows y macOS): abre sin advertencias
+ * - LibreOffice Calc: abre sin advertencias
+ * - Google Sheets: importable directamente
+ * No requiere ninguna librería externa.
  */
 class ExcelExporter {
 
     private $title;
     private $sheetTitle;
-    /** @var array[] Filas internas: cada elemento es un array de celdas */
+
+    /** @var array[] Filas internas con tipo y celdas */
     private $rows = [];
+
+    /** Número máximo de columnas (para colspans correctos) */
+    private $maxCols = 1;
 
     public function __construct($title = 'Reporte') {
         $this->title      = $title;
-        $this->sheetTitle = substr($title, 0, 31); // Excel limita a 31 chars
+        $this->sheetTitle = substr($title, 0, 31);
     }
 
     // ------------------------------------------------------------------ //
-    //  API pública — idéntica a la versión original con PhpSpreadsheet    //
+    //  API pública — idéntica a la versión anterior                       //
     // ------------------------------------------------------------------ //
 
     public function setReportTitle($title, $subtitle = null) {
-        $this->addRow([['v' => $title,    's' => 'title',    'merge' => 10]]);
+        $this->rows[] = ['type' => 'title',    'text' => $title];
         if ($subtitle) {
-            $this->addRow([['v' => $subtitle, 's' => 'subtitle', 'merge' => 10]]);
+            $this->rows[] = ['type' => 'subtitle', 'text' => $subtitle];
         }
-        $this->addRow([['v' => 'Generado: ' . date('d/m/Y H:i'), 's' => 'subtitle', 'merge' => 10]]);
-        $this->addRow([]); // espaciador
+        $this->rows[] = ['type' => 'subtitle', 'text' => 'Generado: ' . date('d/m/Y H:i')];
+        $this->rows[] = ['type' => 'spacer'];
     }
 
     public function addSummary($sectionTitle, $data) {
-        $this->addRow([['v' => $sectionTitle, 's' => 'section']]);
+        $this->rows[] = ['type' => 'section', 'text' => $sectionTitle];
         foreach ($data as $label => $value) {
-            $this->addRow([
-                ['v' => $label, 's' => 'label'],
-                ['v' => $value, 's' => 'normal'],
-            ]);
+            $this->rows[] = ['type' => 'summary_row', 'label' => $label, 'value' => $value];
+            $this->maxCols = max($this->maxCols, 2);
         }
-        $this->addRow([]); // espaciador
+        $this->rows[] = ['type' => 'spacer'];
     }
 
     public function createTable($headers, $data, $startRow = null) {
-        $headerRow = [];
-        foreach ($headers as $h) {
-            $headerRow[] = ['v' => $h, 's' => 'header'];
-        }
-        $this->addRow($headerRow);
-
+        $cols = count($headers);
+        $this->maxCols = max($this->maxCols, $cols);
+        $this->rows[] = ['type' => 'table_header', 'cells' => $headers];
         foreach ($data as $row) {
-            $cells = [];
-            foreach ($row as $cell) {
-                $cells[] = ['v' => $cell, 's' => 'normal'];
-            }
-            $this->addRow($cells);
+            $this->rows[] = ['type' => 'table_row', 'cells' => array_values((array)$row)];
         }
-        $this->addRow([]); // espaciador
+        $this->rows[] = ['type' => 'spacer'];
     }
 
     public function download($filename = 'reporte.xlsx') {
-        // Sanitize filename: strip path separators, control chars and header-injection chars
+        // Sanitize filename
         $filename = preg_replace('/[\r\n\t"\'\\\\\/]/', '_', basename($filename));
-        // El formato XML Spreadsheet 2003 debe usar la extensión .xml para evitar
-        // la advertencia de Excel "el formato y la extensión no coinciden" que
-        // aparece cuando el archivo tiene extensión .xls pero contiene XML.
-        $filename = preg_replace('/\.xlsx?$/i', '.xml', $filename);
+        // Use .xls extension with HTML content — the most universally compatible
+        // approach for PHP-without-Composer Excel exports.
+        // Excel/LibreOffice/Sheets all open HTML+.xls without any warning.
+        $filename = preg_replace('/\.xlsx?$|\.xml$/i', '.xls', $filename);
 
-        header('Content-Type: application/xml; charset=UTF-8');
+        header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         header('Cache-Control: max-age=0');
         header('Pragma: cache');
 
-        echo $this->buildXml();
+        echo $this->buildHtml();
         exit;
     }
 
-    // Métodos de compatibilidad (no-op en esta implementación)
+    // Métodos de compatibilidad (no-op)
     public function writeCell($column, $row, $value, $bold = false) {}
     public function mergeCells($range) {}
     public function setColumnWidth($column, $width) {}
     public function getSheet() { return null; }
     public function getSpreadsheet() { return null; }
-    public function save($filepath) { file_put_contents($filepath, $this->buildXml()); }
+    public function save($filepath) { file_put_contents($filepath, $this->buildHtml()); }
 
     // ------------------------------------------------------------------ //
     //  Internals                                                           //
     // ------------------------------------------------------------------ //
 
-    private function addRow($cells) {
-        $this->rows[] = $cells;
-    }
+    private function buildHtml() {
+        $cols = max($this->maxCols, 1);
 
-    private function buildXml() {
-        $xml  = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-        // Processing instruction helps Excel/LibreOffice recognise the format
-        $xml .= "<?mso-application progid=\"Excel.Sheet\"?>\n";
-        // Full namespace declarations required by the XML Spreadsheet 2003 spec
-        $xml .= "<Workbook\n";
-        $xml .= " xmlns=\"urn:schemas-microsoft-com:office:spreadsheet\"\n";
-        $xml .= " xmlns:o=\"urn:schemas-microsoft-com:office:office\"\n";
-        $xml .= " xmlns:x=\"urn:schemas-microsoft-com:office:excel\"\n";
-        $xml .= " xmlns:ss=\"urn:schemas-microsoft-com:office:spreadsheet\"\n";
-        $xml .= " xmlns:html=\"http://www.w3.org/TR/REC-html40\">\n";
+        $html  = '<html xmlns:o="urn:schemas-microsoft-com:office:office"';
+        $html .= ' xmlns:x="urn:schemas-microsoft-com:office:excel"';
+        $html .= ' xmlns="http://www.w3.org/TR/REC-html40">' . "\n";
+        $html .= "<head>\n";
+        $html .= '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">' . "\n";
+        $html .= "<!--[if gte mso 9]><xml>\n";
+        $html .= "  <x:ExcelWorkbook>\n";
+        $html .= "    <x:ExcelWorksheets>\n";
+        $html .= "      <x:ExcelWorksheet>\n";
+        $html .= '        <x:Name>' . htmlspecialchars($this->sheetTitle) . "</x:Name>\n";
+        $html .= "        <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>\n";
+        $html .= "      </x:ExcelWorksheet>\n";
+        $html .= "    </x:ExcelWorksheets>\n";
+        $html .= "  </x:ExcelWorkbook>\n";
+        $html .= "</xml><![endif]-->\n";
+        $html .= "<style>\n";
+        $html .= "body{font-family:Arial,sans-serif;font-size:10pt;}\n";
+        $html .= ".title{font-size:16pt;font-weight:bold;text-align:center;}\n";
+        $html .= ".subtitle{font-size:10pt;font-style:italic;text-align:center;color:#555;}\n";
+        $html .= ".section{font-size:12pt;font-weight:bold;}\n";
+        $html .= ".lbl{font-weight:bold;background:#EEEEEE;}\n";
+        $html .= ".th{font-weight:bold;background:#667EEA;color:#FFFFFF;text-align:center;}\n";
+        $html .= "td,th{border:1px solid #CCCCCC;padding:4px 8px;}\n";
+        $html .= "tr.odd td{background:#F7F7FB;}\n";
+        $html .= "</style>\n";
+        $html .= "</head>\n<body>\n";
+        $html .= '<table border="1" cellspacing="0" cellpadding="4">' . "\n";
 
-        // Estilos
-        // NOTE: ss:FontName (not ss:Name) is the correct attribute per the spec.
-        // Using ss:Name causes "Error: Estilo" in LibreOffice / Excel.
-        $xml .= "<Styles>\n";
-        // Default style is required by the XML Spreadsheet 2003 specification
-        $xml .= '<Style ss:ID="Default" ss:Name="Normal">'
-              . '<Alignment ss:Vertical="Bottom"/>'
-              . '<Borders/>'
-              . '<Font ss:FontName="Arial" ss:Size="10" ss:Color="#000000"/>'
-              . '<Interior/>'
-              . '<NumberFormat/>'
-              . '<Protection/>'
-              . "</Style>\n";
-        $xml .= '<Style ss:ID="title">'
-              . '<Font ss:Bold="1" ss:Size="16" ss:FontName="Arial"/>'
-              . '<Alignment ss:Horizontal="Center"/>'
-              . "</Style>\n";
-        $xml .= '<Style ss:ID="subtitle">'
-              . '<Font ss:Size="10" ss:FontName="Arial" ss:Italic="1"/>'
-              . '<Alignment ss:Horizontal="Center"/>'
-              . "</Style>\n";
-        $xml .= '<Style ss:ID="section">'
-              . '<Font ss:Bold="1" ss:Size="12" ss:FontName="Arial"/>'
-              . "</Style>\n";
-        $xml .= '<Style ss:ID="label">'
-              . '<Font ss:Bold="1" ss:FontName="Arial"/>'
-              . '<Interior ss:Color="#EEEEEE" ss:Pattern="Solid"/>'
-              . "</Style>\n";
-        $xml .= '<Style ss:ID="header">'
-              . '<Font ss:Bold="1" ss:Color="#FFFFFF" ss:FontName="Arial"/>'
-              . '<Interior ss:Color="#667EEA" ss:Pattern="Solid"/>'
-              . '<Alignment ss:Horizontal="Center"/>'
-              . "</Style>\n";
-        $xml .= '<Style ss:ID="normal">'
-              . '<Font ss:FontName="Arial"/>'
-              . '<Alignment ss:WrapText="1"/>'
-              . "</Style>\n";
-        $xml .= "</Styles>\n";
+        $oddRow = false;
+        foreach ($this->rows as $row) {
+            switch ($row['type']) {
+                case 'title':
+                    $html .= '<tr><td colspan="' . $cols . '" class="title">'
+                           . htmlspecialchars((string)$row['text']) . "</td></tr>\n";
+                    break;
 
-        // Hoja
-        $xml .= '<Worksheet ss:Name="' . htmlspecialchars($this->sheetTitle, ENT_XML1) . '">' . "\n";
-        $xml .= "<Table>\n";
+                case 'subtitle':
+                    $html .= '<tr><td colspan="' . $cols . '" class="subtitle">'
+                           . htmlspecialchars((string)$row['text']) . "</td></tr>\n";
+                    break;
 
-        foreach ($this->rows as $rowCells) {
-            $xml .= "<Row>\n";
-            if (empty($rowCells)) {
-                $xml .= "<Cell><Data ss:Type=\"String\"></Data></Cell>\n";
-            } else {
-                foreach ($rowCells as $cell) {
-                    $style   = $cell['s'] ?? 'normal';
-                    $merge   = isset($cell['merge'])
-                             ? ' ss:MergeAcross="' . ((int)$cell['merge'] - 1) . '"'
-                             : '';
-                    $val     = (string)($cell['v'] ?? '');
-                    $type    = (is_numeric($val) && $val !== '') ? 'Number' : 'String';
-                    $escaped = htmlspecialchars($val, ENT_XML1 | ENT_QUOTES, 'UTF-8');
-                    $xml .= '<Cell ss:StyleID="' . $style . '"' . $merge . '>'
-                          . '<Data ss:Type="' . $type . '">' . $escaped . '</Data>'
-                          . "</Cell>\n";
-                }
+                case 'section':
+                    $html .= '<tr><td colspan="' . $cols . '" class="section">'
+                           . htmlspecialchars((string)$row['text']) . "</td></tr>\n";
+                    break;
+
+                case 'summary_row':
+                    if ($cols >= 2) {
+                        $rest  = $cols - 2;
+                        $extra = ($rest > 0) ? ' colspan="' . ($rest + 1) . '"' : '';
+                        $html .= '<tr><td class="lbl">'
+                               . htmlspecialchars((string)$row['label']) . '</td>'
+                               . '<td' . $extra . '>'
+                               . htmlspecialchars((string)$row['value']) . "</td></tr>\n";
+                    } else {
+                        $html .= '<tr><td class="lbl">'
+                               . htmlspecialchars((string)$row['label'])
+                               . ' ' . htmlspecialchars((string)$row['value'])
+                               . "</td></tr>\n";
+                    }
+                    break;
+
+                case 'table_header':
+                    $html .= '<tr>';
+                    foreach ($row['cells'] as $cell) {
+                        $html .= '<th class="th">' . htmlspecialchars((string)$cell) . '</th>';
+                    }
+                    // Pad to maxCols if needed
+                    for ($i = count($row['cells']); $i < $cols; $i++) {
+                        $html .= '<th class="th"></th>';
+                    }
+                    $html .= "</tr>\n";
+                    $oddRow = false;
+                    break;
+
+                case 'table_row':
+                    $class = $oddRow ? ' class="odd"' : '';
+                    $html .= '<tr' . $class . '>';
+                    foreach ($row['cells'] as $cell) {
+                        $html .= '<td>' . htmlspecialchars((string)$cell) . '</td>';
+                    }
+                    for ($i = count($row['cells']); $i < $cols; $i++) {
+                        $html .= '<td></td>';
+                    }
+                    $html .= "</tr>\n";
+                    $oddRow = !$oddRow;
+                    break;
+
+                case 'spacer':
+                    $html .= '<tr><td colspan="' . $cols . '">&nbsp;</td></tr>' . "\n";
+                    break;
             }
-            $xml .= "</Row>\n";
         }
 
-        $xml .= "</Table>\n";
-        $xml .= "</Worksheet>\n";
-        $xml .= "</Workbook>\n";
-
-        return $xml;
+        $html .= "</table>\n</body>\n</html>\n";
+        return $html;
     }
 }
+
 
