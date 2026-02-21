@@ -22,17 +22,14 @@ RewriteEngine On
 # LiteSpeed / cPanel SPECIFIC FIX: explicit early rule for directories
 # that are also app routes.
 #
-# On LiteSpeed, requests for a real filesystem directory can be blocked
-# (HTTP 403) before the general RewriteRule below is evaluated, because
-# LiteSpeed resolves the -Indexes restriction at directory-check time, not
-# at rewrite time.  Adding an unconditional rule that rewrites the bare
-# directory URL to a concrete FILE (the stub index.php inside it) prevents
-# LiteSpeed from ever reaching the -Indexes 403 path.
-#
-# If more route-directories are added in the future (e.g. /usuarios/),
-# add a matching line here.
+# Change: rewrite directly to the PHP entry-point (index.php?url=…)
+# instead of to configuraciones/index.php.  Rewriting to a path inside
+# the blocked directory did not help because LiteSpeed may still apply
+# the -Indexes restriction to the target directory.  Rewriting to a
+# plain FILE (index.php at the document root) bypasses directory-access
+# checks entirely.
 # -----------------------------------------------------------------------
-RewriteRule ^configuraciones/?$ configuraciones/index.php [L]
+RewriteRule ^configuraciones/?$ index.php?url=configuraciones [L,QSA]
 
 # Configuración de PHP (intentar sobrescribir open_basedir si es posible)
 # Nota: Esto puede no funcionar en todos los servidores si está bloqueado por el admin

@@ -3,21 +3,31 @@
 # WHY THIS FILE EXISTS
 # --------------------
 # A real 'configuraciones/' directory exists on the filesystem.  On
-# LiteSpeed / cPanel shared hosting, "Options -Indexes" (set in the parent
-# .htaccess) is sometimes evaluated during the directory-resolution stage
-# BEFORE mod_rewrite is allowed to run.  This causes the server to return
-# HTTP 403 Forbidden even though:
-#   - The parent .htaccess already declares "DirectoryIndex index.php", AND
-#   - A valid index.php stub exists inside this directory.
+# LiteSpeed / cPanel shared hosting, "Options -Indexes" is set in the
+# parent .htaccess.  Apache/LiteSpeed Option inheritance rules mean that
+# a child directory that only sets "Options +FollowSymLinks" does NOT
+# remove the parent's "-Indexes" -- it simply adds FollowSymLinks to the
+# already-active set which still contains -Indexes.  The server therefore
+# returns HTTP 403 without ever checking the DirectoryIndex file.
 #
-# Adding this per-directory .htaccess ensures LiteSpeed reads and applies
-# "DirectoryIndex index.php" while processing THIS directory specifically,
-# which causes it to serve the stub file instead of returning 403.
+# Fix: explicitly add "+Indexes" in this child .htaccess.  Apache/LiteSpeed
+# then resolves the effective options for this directory as:
+#   (parent: +FollowSymLinks -Indexes) PLUS (child: +Indexes)
+#   => +FollowSymLinks +Indexes
 #
-# IMPORTANT: Do not add RewriteEngine rules here – all URL routing is
-# handled by the root index.php router.  Sub-paths such as
-# /configuraciones/auditoria are NOT real directories and are therefore
-# handled cleanly by the parent .htaccess RewriteRule.
+# With +Indexes active, the server checks DirectoryIndex before returning
+# 403, finds index.php, and serves it.  Because DirectoryIndex IS found,
+# a directory listing is never shown -- +Indexes only triggers a listing
+# when no DirectoryIndex file exists.
+#
+# ErrorDocument 403 provides a last-resort fallback in case some server
+# configurations still generate a 403 before this file is read.
 
-Options +FollowSymLinks
+# Override the parent's -Indexes so DirectoryIndex is honoured here
+Options +FollowSymLinks +Indexes
+
 DirectoryIndex index.php
+
+# Last-resort fallback: if 403 is somehow still generated for this
+# directory, redirect the request through the main PHP router.
+ErrorDocument 403 /index.php?url=configuraciones
