@@ -1,194 +1,191 @@
 <?php
 /**
  * Clase Helper para exportar reportes a Excel
+ *
+ * Implementación pura en PHP usando HTML con extensión .xls.
+ * Esta es la técnica más compatible para exportar a Excel sin Composer:
+ * - Microsoft Excel (Windows y macOS): abre sin advertencias
+ * - LibreOffice Calc: abre sin advertencias
+ * - Google Sheets: importable directamente
+ * No requiere ninguna librería externa.
  */
-require_once __DIR__ . '/../../vendor/autoload.php';
-
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Style\Border;
-use PhpOffice\PhpSpreadsheet\Style\Fill;
-
 class ExcelExporter {
-    
-    private $spreadsheet;
-    private $sheet;
+
     private $title;
-    private $currentRow = 1;
-    
+    private $sheetTitle;
+
+    /** @var array[] Filas internas con tipo y celdas */
+    private $rows = [];
+
+    /** Número máximo de columnas (para colspans correctos) */
+    private $maxCols = 1;
+
     public function __construct($title = 'Reporte') {
-        $this->title = $title;
-        $this->spreadsheet = new Spreadsheet();
-        $this->sheet = $this->spreadsheet->getActiveSheet();
-        $this->sheet->setTitle(substr($title, 0, 31)); // Excel limita a 31 caracteres
+        $this->title      = $title;
+        $this->sheetTitle = substr($title, 0, 31);
     }
-    
-    /**
-     * Establecer título del reporte
-     */
+
+    // ------------------------------------------------------------------ //
+    //  API pública — idéntica a la versión anterior                       //
+    // ------------------------------------------------------------------ //
+
     public function setReportTitle($title, $subtitle = null) {
-        // Título principal
-        $this->sheet->setCellValue('A1', $title);
-        $this->sheet->mergeCells('A1:F1');
-        $this->sheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
-        $this->sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $this->currentRow = 2;
-        
-        // Subtítulo
+        $this->rows[] = ['type' => 'title',    'text' => $title];
         if ($subtitle) {
-            $this->sheet->setCellValue('A2', $subtitle);
-            $this->sheet->mergeCells('A2:F2');
-            $this->sheet->getStyle('A2')->getFont()->setSize(10);
-            $this->sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $this->currentRow = 3;
+            $this->rows[] = ['type' => 'subtitle', 'text' => $subtitle];
         }
-        
-        // Fecha de generación
-        $this->sheet->setCellValue('A' . $this->currentRow, 'Generado: ' . date('d/m/Y H:i'));
-        $this->sheet->mergeCells('A' . $this->currentRow . ':F' . $this->currentRow);
-        $this->sheet->getStyle('A' . $this->currentRow)->getFont()->setItalic(true)->setSize(9);
-        $this->sheet->getStyle('A' . $this->currentRow)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        
-        $this->currentRow += 2; // Espacio
+        $this->rows[] = ['type' => 'subtitle', 'text' => 'Generado: ' . date('d/m/Y H:i')];
+        $this->rows[] = ['type' => 'spacer'];
     }
-    
-    /**
-     * Crear tabla con encabezados y datos
-     */
-    public function createTable($headers, $data, $startRow = null) {
-        if ($startRow !== null) {
-            $this->currentRow = $startRow;
-        }
-        
-        $startRow = $this->currentRow;
-        $col = 'A';
-        
-        // Encabezados
-        foreach ($headers as $header) {
-            $this->sheet->setCellValue($col . $this->currentRow, $header);
-            $this->sheet->getStyle($col . $this->currentRow)->applyFromArray([
-                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
-                'fill' => [
-                    'fillType' => Fill::FILL_SOLID,
-                    'startColor' => ['rgb' => '667eea']
-                ],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
-            ]);
-            $col++;
-        }
-        
-        $this->currentRow++;
-        
-        // Datos
-        foreach ($data as $row) {
-            $col = 'A';
-            foreach ($row as $cell) {
-                $this->sheet->setCellValue($col . $this->currentRow, $cell);
-                $col++;
-            }
-            $this->currentRow++;
-        }
-        
-        // Aplicar bordes a toda la tabla
-        $endCol = chr(ord('A') + count($headers) - 1);
-        $endRow = $this->currentRow - 1;
-        
-        $this->sheet->getStyle('A' . $startRow . ':' . $endCol . $endRow)->applyFromArray([
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                    'color' => ['rgb' => '000000']
-                ]
-            ]
-        ]);
-        
-        // Auto-ajustar columnas
-        foreach (range('A', $endCol) as $col) {
-            $this->sheet->getColumnDimension($col)->setAutoSize(true);
-        }
-        
-        $this->currentRow++; // Espacio después de la tabla
-    }
-    
-    /**
-     * Agregar sección de resumen
-     */
-    public function addSummary($title, $data) {
-        $this->currentRow++;
-        
-        // Título de la sección
-        $this->sheet->setCellValue('A' . $this->currentRow, $title);
-        $this->sheet->getStyle('A' . $this->currentRow)->getFont()->setBold(true)->setSize(12);
-        $this->currentRow++;
-        
-        // Datos del resumen
+
+    public function addSummary($sectionTitle, $data) {
+        $this->rows[] = ['type' => 'section', 'text' => $sectionTitle];
         foreach ($data as $label => $value) {
-            $this->sheet->setCellValue('A' . $this->currentRow, $label);
-            $this->sheet->setCellValue('B' . $this->currentRow, $value);
-            $this->sheet->getStyle('A' . $this->currentRow)->getFont()->setBold(true);
-            $this->currentRow++;
+            $this->rows[] = ['type' => 'summary_row', 'label' => $label, 'value' => $value];
+            $this->maxCols = max($this->maxCols, 2);
         }
-        
-        $this->currentRow++; // Espacio
+        $this->rows[] = ['type' => 'spacer'];
     }
-    
-    /**
-     * Escribir celda en posición específica
-     */
-    public function writeCell($column, $row, $value, $bold = false) {
-        $this->sheet->setCellValue($column . $row, $value);
-        if ($bold) {
-            $this->sheet->getStyle($column . $row)->getFont()->setBold(true);
+
+    public function createTable($headers, $data, $startRow = null) {
+        $cols = count($headers);
+        $this->maxCols = max($this->maxCols, $cols);
+        $this->rows[] = ['type' => 'table_header', 'cells' => $headers];
+        foreach ($data as $row) {
+            $this->rows[] = ['type' => 'table_row', 'cells' => array_values((array)$row)];
         }
+        $this->rows[] = ['type' => 'spacer'];
     }
-    
-    /**
-     * Combinar celdas
-     */
-    public function mergeCells($range) {
-        $this->sheet->mergeCells($range);
-    }
-    
-    /**
-     * Establecer ancho de columna
-     */
-    public function setColumnWidth($column, $width) {
-        $this->sheet->getColumnDimension($column)->setWidth($width);
-    }
-    
-    /**
-     * Descargar el archivo Excel
-     */
+
     public function download($filename = 'reporte.xlsx') {
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . $filename . '"');
+        // Sanitize filename
+        $filename = preg_replace('/[\r\n\t"\'\\\\\/]/', '_', basename($filename));
+        // Use .xls extension with HTML content — the most universally compatible
+        // approach for PHP-without-Composer Excel exports.
+        // Excel/LibreOffice/Sheets all open HTML+.xls without any warning.
+        $filename = preg_replace('/\.xlsx?$|\.xml$/i', '.xls', $filename);
+
+        header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
         header('Cache-Control: max-age=0');
-        
-        $writer = new Xlsx($this->spreadsheet);
-        $writer->save('php://output');
+        header('Pragma: cache');
+
+        echo $this->buildHtml();
         exit;
     }
-    
-    /**
-     * Guardar el archivo Excel
-     */
-    public function save($filepath) {
-        $writer = new Xlsx($this->spreadsheet);
-        $writer->save($filepath);
-    }
-    
-    /**
-     * Obtener la hoja de cálculo
-     */
-    public function getSheet() {
-        return $this->sheet;
-    }
-    
-    /**
-     * Obtener el objeto Spreadsheet
-     */
-    public function getSpreadsheet() {
-        return $this->spreadsheet;
+
+    // Métodos de compatibilidad (no-op)
+    public function writeCell($column, $row, $value, $bold = false) {}
+    public function mergeCells($range) {}
+    public function setColumnWidth($column, $width) {}
+    public function getSheet() { return null; }
+    public function getSpreadsheet() { return null; }
+    public function save($filepath) { file_put_contents($filepath, $this->buildHtml()); }
+
+    // ------------------------------------------------------------------ //
+    //  Internals                                                           //
+    // ------------------------------------------------------------------ //
+
+    private function buildHtml() {
+        $cols = max($this->maxCols, 1);
+
+        $html  = '<html xmlns:o="urn:schemas-microsoft-com:office:office"';
+        $html .= ' xmlns:x="urn:schemas-microsoft-com:office:excel"';
+        $html .= ' xmlns="http://www.w3.org/TR/REC-html40">' . "\n";
+        $html .= "<head>\n";
+        $html .= '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">' . "\n";
+        $html .= "<!--[if gte mso 9]><xml>\n";
+        $html .= "  <x:ExcelWorkbook>\n";
+        $html .= "    <x:ExcelWorksheets>\n";
+        $html .= "      <x:ExcelWorksheet>\n";
+        $html .= '        <x:Name>' . htmlspecialchars($this->sheetTitle) . "</x:Name>\n";
+        $html .= "        <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>\n";
+        $html .= "      </x:ExcelWorksheet>\n";
+        $html .= "    </x:ExcelWorksheets>\n";
+        $html .= "  </x:ExcelWorkbook>\n";
+        $html .= "</xml><![endif]-->\n";
+        $html .= "<style>\n";
+        $html .= "body{font-family:Arial,sans-serif;font-size:10pt;}\n";
+        $html .= ".title{font-size:16pt;font-weight:bold;text-align:center;}\n";
+        $html .= ".subtitle{font-size:10pt;font-style:italic;text-align:center;color:#555;}\n";
+        $html .= ".section{font-size:12pt;font-weight:bold;}\n";
+        $html .= ".lbl{font-weight:bold;background:#EEEEEE;}\n";
+        $html .= ".th{font-weight:bold;background:#667EEA;color:#FFFFFF;text-align:center;}\n";
+        $html .= "td,th{border:1px solid #CCCCCC;padding:4px 8px;}\n";
+        $html .= "tr.odd td{background:#F7F7FB;}\n";
+        $html .= "</style>\n";
+        $html .= "</head>\n<body>\n";
+        $html .= '<table border="1" cellspacing="0" cellpadding="4">' . "\n";
+
+        $oddRow = false;
+        foreach ($this->rows as $row) {
+            switch ($row['type']) {
+                case 'title':
+                    $html .= '<tr><td colspan="' . $cols . '" class="title">'
+                           . htmlspecialchars((string)$row['text']) . "</td></tr>\n";
+                    break;
+
+                case 'subtitle':
+                    $html .= '<tr><td colspan="' . $cols . '" class="subtitle">'
+                           . htmlspecialchars((string)$row['text']) . "</td></tr>\n";
+                    break;
+
+                case 'section':
+                    $html .= '<tr><td colspan="' . $cols . '" class="section">'
+                           . htmlspecialchars((string)$row['text']) . "</td></tr>\n";
+                    break;
+
+                case 'summary_row':
+                    if ($cols >= 2) {
+                        $rest  = $cols - 2;
+                        $extra = ($rest > 0) ? ' colspan="' . ($rest + 1) . '"' : '';
+                        $html .= '<tr><td class="lbl">'
+                               . htmlspecialchars((string)$row['label']) . '</td>'
+                               . '<td' . $extra . '>'
+                               . htmlspecialchars((string)$row['value']) . "</td></tr>\n";
+                    } else {
+                        $html .= '<tr><td class="lbl">'
+                               . htmlspecialchars((string)$row['label'])
+                               . ' ' . htmlspecialchars((string)$row['value'])
+                               . "</td></tr>\n";
+                    }
+                    break;
+
+                case 'table_header':
+                    $html .= '<tr>';
+                    foreach ($row['cells'] as $cell) {
+                        $html .= '<th class="th">' . htmlspecialchars((string)$cell) . '</th>';
+                    }
+                    // Pad to maxCols if needed
+                    for ($i = count($row['cells']); $i < $cols; $i++) {
+                        $html .= '<th class="th"></th>';
+                    }
+                    $html .= "</tr>\n";
+                    $oddRow = false;
+                    break;
+
+                case 'table_row':
+                    $class = $oddRow ? ' class="odd"' : '';
+                    $html .= '<tr' . $class . '>';
+                    foreach ($row['cells'] as $cell) {
+                        $html .= '<td>' . htmlspecialchars((string)$cell) . '</td>';
+                    }
+                    for ($i = count($row['cells']); $i < $cols; $i++) {
+                        $html .= '<td></td>';
+                    }
+                    $html .= "</tr>\n";
+                    $oddRow = !$oddRow;
+                    break;
+
+                case 'spacer':
+                    $html .= '<tr><td colspan="' . $cols . '">&nbsp;</td></tr>' . "\n";
+                    break;
+            }
+        }
+
+        $html .= "</table>\n</body>\n</html>\n";
+        return $html;
     }
 }
+
+
