@@ -147,6 +147,27 @@ if (!empty($_sitioLogo) && !preg_match('/^uploads\/[a-zA-Z0-9_\-\.]+\.(png|jpg|j
             border-left: 4px solid var(--primary-color);
         }
         
+        .stat-card-blue {
+            background: linear-gradient(135deg, #4e73df, #224abe);
+            color: #fff;
+        }
+        .stat-card-green {
+            background: linear-gradient(135deg, #1cc88a, #13855c);
+            color: #fff;
+        }
+        .stat-card-teal {
+            background: linear-gradient(135deg, #36b9cc, #1a6272);
+            color: #fff;
+        }
+        .stat-card-red {
+            background: linear-gradient(135deg, #e74a3b, #be2617);
+            color: #fff;
+        }
+        .stat-card-yellow {
+            background: linear-gradient(135deg, #f6c23e, #dda20a);
+            color: #fff;
+        }
+        
         .table-hover tbody tr:hover {
             background-color: rgba(102, 126, 234, 0.05);
         }

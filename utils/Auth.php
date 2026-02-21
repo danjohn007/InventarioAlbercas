@@ -185,8 +185,8 @@ class Auth {
     
     /**
      * Ensure a permissions array has all required modules for the given role.
-     * Adds missing modules only (never removes existing ones).
-     * If any module was added, persists the updated JSON back to the DB role.
+     * Adds missing modules AND merges missing actions for existing modules.
+     * If any change was made, persists the updated JSON back to the DB role.
      *
      * @param  array    $permisos  Current decoded permissions array
      * @param  string   $rolNombre Role name (e.g. 'Administrador')
@@ -213,9 +213,17 @@ class Auth {
 
         $patched = false;
         foreach ($requiredByRole[$rolNombre] as $modulo => $acciones) {
-            if (!isset($permisos[$modulo])) {
+            if (!isset($permisos[$modulo]) || !is_array($permisos[$modulo])) {
+                // Module missing entirely
                 $permisos[$modulo] = $acciones;
                 $patched = true;
+            } else {
+                // Module exists but may be missing some actions
+                $missing = array_diff($acciones, $permisos[$modulo]);
+                if (!empty($missing)) {
+                    $permisos[$modulo] = array_values(array_unique(array_merge($permisos[$modulo], $missing)));
+                    $patched = true;
+                }
             }
         }
 

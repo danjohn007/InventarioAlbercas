@@ -1,14 +1,14 @@
 <div class="row">
     <!-- Tarjetas de estadísticas -->
-    <div class="col-md-3 mb-4">
-        <div class="card stat-card">
-            <div class="card-body">
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card stat-card-blue border-0 shadow-sm">
+            <div class="card-body py-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="text-muted mb-2">Productos</h6>
-                        <h2 class="mb-0"><?php echo number_format($stats['productos']); ?></h2>
+                        <div class="small fw-semibold text-uppercase mb-1" style="opacity:.85;">Productos</div>
+                        <div class="h3 fw-bold mb-0"><?php echo number_format($stats['productos']); ?></div>
                     </div>
-                    <div class="fs-1 text-primary">
+                    <div style="font-size:2rem;opacity:.6;">
                         <i class="bi bi-box-seam"></i>
                     </div>
                 </div>
@@ -16,15 +16,15 @@
         </div>
     </div>
     
-    <div class="col-md-3 mb-4">
-        <div class="card stat-card">
-            <div class="card-body">
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card stat-card-green border-0 shadow-sm">
+            <div class="card-body py-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="text-muted mb-2">Valor Inventario</h6>
-                        <h2 class="mb-0">$<?php echo number_format($stats['valor_inventario'], 2); ?></h2>
+                        <div class="small fw-semibold text-uppercase mb-1" style="opacity:.85;">Valor Inventario</div>
+                        <div class="h3 fw-bold mb-0">$<?php echo number_format($stats['valor_inventario'], 2); ?></div>
                     </div>
-                    <div class="fs-1 text-success">
+                    <div style="font-size:2rem;opacity:.6;">
                         <i class="bi bi-cash-stack"></i>
                     </div>
                 </div>
@@ -32,15 +32,15 @@
         </div>
     </div>
     
-    <div class="col-md-3 mb-4">
-        <div class="card stat-card">
-            <div class="card-body">
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card stat-card-teal border-0 shadow-sm">
+            <div class="card-body py-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="text-muted mb-2">Ingresos del Mes</h6>
-                        <h2 class="mb-0">$<?php echo number_format($stats['ingresos_mes'], 2); ?></h2>
+                        <div class="small fw-semibold text-uppercase mb-1" style="opacity:.85;">Ingresos del Mes</div>
+                        <div class="h3 fw-bold mb-0">$<?php echo number_format($stats['ingresos_mes'], 2); ?></div>
                     </div>
-                    <div class="fs-1 text-success">
+                    <div style="font-size:2rem;opacity:.6;">
                         <i class="bi bi-graph-up-arrow"></i>
                     </div>
                 </div>
@@ -48,15 +48,15 @@
         </div>
     </div>
     
-    <div class="col-md-3 mb-4">
-        <div class="card stat-card">
-            <div class="card-body">
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card stat-card-red border-0 shadow-sm">
+            <div class="card-body py-3">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h6 class="text-muted mb-2">Gastos del Mes</h6>
-                        <h2 class="mb-0">$<?php echo number_format($stats['gastos_mes'], 2); ?></h2>
+                        <div class="small fw-semibold text-uppercase mb-1" style="opacity:.85;">Gastos del Mes</div>
+                        <div class="h3 fw-bold mb-0">$<?php echo number_format($stats['gastos_mes'], 2); ?></div>
                     </div>
-                    <div class="fs-1 text-danger">
+                    <div style="font-size:2rem;opacity:.6;">
                         <i class="bi bi-graph-down-arrow"></i>
                     </div>
                 </div>
@@ -65,57 +65,46 @@
     </div>
 </div>
 
-<!-- Balance del mes -->
-<div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-md-4">
-                        <div class="p-3">
-                            <i class="bi bi-arrow-up-circle text-success" style="font-size: 2.5rem;"></i>
-                            <h5 class="mt-2">Ingresos del Mes</h5>
-                            <h3 class="text-success">$<?php echo number_format($stats['ingresos_mes'], 2); ?></h3>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="p-3">
-                            <i class="bi bi-arrow-down-circle text-danger" style="font-size: 2.5rem;"></i>
-                            <h5 class="mt-2">Gastos del Mes</h5>
-                            <h3 class="text-danger">$<?php echo number_format($stats['gastos_mes'], 2); ?></h3>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="p-3">
-                            <?php 
-                            $balance = $stats['ingresos_mes'] - $stats['gastos_mes'];
-                            $balance_color = $balance >= 0 ? 'success' : 'danger';
-                            $balance_icon = $balance >= 0 ? 'bi-check-circle' : 'bi-x-circle';
-                            ?>
-                            <i class="bi <?php echo $balance_icon; ?> text-<?php echo $balance_color; ?>" style="font-size: 2.5rem;"></i>
-                            <h5 class="mt-2">Balance</h5>
-                            <h3 class="text-<?php echo $balance_color; ?>">$<?php echo number_format($balance, 2); ?></h3>
-                        </div>
-                    </div>
-                </div>
+<!-- Balance del mes + Servicios Activos -->
+<div class="row mb-3">
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card-green border-0 shadow-sm h-100">
+            <div class="card-body py-3 text-center">
+                <i class="bi bi-arrow-up-circle" style="font-size:2rem;opacity:.8;"></i>
+                <div class="small fw-semibold text-uppercase mt-1" style="opacity:.85;">Ingresos del Mes</div>
+                <div class="h4 fw-bold mb-0 mt-1">$<?php echo number_format($stats['ingresos_mes'], 2); ?></div>
             </div>
         </div>
     </div>
-</div>
-
-<div class="row mb-4">
-    <div class="col-md-3 mb-4">
-        <div class="card stat-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="text-muted mb-2">Servicios Activos</h6>
-                        <h2 class="mb-0"><?php echo number_format($stats['servicios_activos']); ?></h2>
-                    </div>
-                    <div class="fs-1 text-info">
-                        <i class="bi bi-tools"></i>
-                    </div>
-                </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card-red border-0 shadow-sm h-100">
+            <div class="card-body py-3 text-center">
+                <i class="bi bi-arrow-down-circle" style="font-size:2rem;opacity:.8;"></i>
+                <div class="small fw-semibold text-uppercase mt-1" style="opacity:.85;">Gastos del Mes</div>
+                <div class="h4 fw-bold mb-0 mt-1">$<?php echo number_format($stats['gastos_mes'], 2); ?></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <?php 
+        $balance = $stats['ingresos_mes'] - $stats['gastos_mes'];
+        $balance_class = $balance >= 0 ? 'stat-card-green' : 'stat-card-red';
+        $balance_icon = $balance >= 0 ? 'bi-check-circle' : 'bi-x-circle';
+        ?>
+        <div class="card <?php echo $balance_class; ?> border-0 shadow-sm h-100">
+            <div class="card-body py-3 text-center">
+                <i class="bi <?php echo $balance_icon; ?>" style="font-size:2rem;opacity:.8;"></i>
+                <div class="small fw-semibold text-uppercase mt-1" style="opacity:.85;">Balance</div>
+                <div class="h4 fw-bold mb-0 mt-1">$<?php echo number_format($balance, 2); ?></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card-yellow border-0 shadow-sm h-100">
+            <div class="card-body py-3 text-center">
+                <i class="bi bi-tools" style="font-size:2rem;opacity:.8;"></i>
+                <div class="small fw-semibold text-uppercase mt-1" style="opacity:.85;">Servicios Activos</div>
+                <div class="h4 fw-bold mb-0 mt-1"><?php echo number_format($stats['servicios_activos']); ?></div>
             </div>
         </div>
     </div>
