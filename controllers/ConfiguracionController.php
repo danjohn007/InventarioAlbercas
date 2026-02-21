@@ -156,7 +156,15 @@ class ConfiguracionController {
                 ('whatsapp_api_key',             '',                                    'texto',    'API Key para el chatbot de WhatsApp',                  'integraciones'),
                 ('whatsapp_access_token',        '',                                    'texto',    'Token de acceso de la WhatsApp Business API',          'integraciones'),
                 ('whatsapp_webhook_verify_token','',                                    'texto',    'Token de verificación del webhook de WhatsApp',        'integraciones'),
-                ('whatsapp_phone_number_id',     '',                                    'texto',    'ID del número de teléfono en Meta Business API',       'integraciones')");
+                ('whatsapp_phone_number_id',     '',                                    'texto',    'ID del número de teléfono en Meta Business API',       'integraciones'),
+                ('email_enabled',               '0',                                   'booleano', 'Activar envío de correos electrónicos',                 'notificaciones'),
+                ('smtp_host',                   '',                                    'texto',    'Servidor SMTP (ej: smtp.gmail.com)',                    'notificaciones'),
+                ('smtp_port',                   '587',                                 'numero',   'Puerto del servidor SMTP',                              'notificaciones'),
+                ('smtp_encryption',             'tls',                                 'texto',    'Cifrado SMTP: tls, ssl o none',                         'notificaciones'),
+                ('smtp_username',               '',                                    'texto',    'Usuario o email de autenticación SMTP',                 'notificaciones'),
+                ('smtp_password',               '',                                    'texto',    'Contraseña de autenticación SMTP',                      'notificaciones'),
+                ('email_from_address',          '',                                    'texto',    'Dirección de correo del remitente (From)',               'notificaciones'),
+                ('email_from_name',             'Sistema Inventario Albercas',         'texto',    'Nombre visible del remitente de correos',               'notificaciones')");
             $_SESSION['configuraciones_extended_ok'] = true;
         } catch (Exception $e) {
             error_log("WARNING: Could not seed extended configuraciones: " . $e->getMessage());
@@ -212,18 +220,41 @@ class ConfiguracionController {
             header('Location: ' . BASE_URL . 'configuraciones');
             exit;
         }
+
+        // CSRF verification
+        if (empty($_POST['csrf_token']) || !isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+            $_SESSION['error'] = 'Token de seguridad inválido. Por favor intenta de nuevo.';
+            header('Location: ' . BASE_URL . 'configuraciones');
+            exit;
+        }
         
         $db = Database::getInstance();
         
         try {
+            // Boolean/checkbox fields must default to '0' when not submitted (unchecked)
+            $booleanFields = ['email_enabled', 'notificaciones_email', 'stock_bajo_alerta', 'backup_automatico'];
+            foreach ($booleanFields as $boolField) {
+                if (!isset($_POST[$boolField])) {
+                    $_POST[$boolField] = '0';
+                }
+            }
+
             // Procesar logo si se subió
             if (isset($_FILES['sitio_logo']) && $_FILES['sitio_logo']['error'] === UPLOAD_ERR_OK) {
+                $allowedMimeTypes = ['image/png' => 'png', 'image/jpeg' => 'jpg', 'image/gif' => 'gif', 'image/webp' => 'webp'];
+                $finfo = new finfo(FILEINFO_MIME_TYPE);
+                $detectedMime = $finfo->file($_FILES['sitio_logo']['tmp_name']);
+
+                if ($detectedMime === false || !array_key_exists($detectedMime, $allowedMimeTypes)) {
+                    throw new Exception('Tipo de archivo no permitido para el logotipo. Use PNG, JPG, GIF o WEBP.');
+                }
+
                 $uploadDir = ROOT_PATH . '/public/uploads/';
                 if (!file_exists($uploadDir)) {
                     mkdir($uploadDir, 0755, true);
                 }
                 
-                $extension = pathinfo($_FILES['sitio_logo']['name'], PATHINFO_EXTENSION);
+                $extension = $allowedMimeTypes[$detectedMime];
                 $filename = 'logo_' . time() . '.' . $extension;
                 $filepath = $uploadDir . $filename;
                 

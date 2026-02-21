@@ -13,6 +13,11 @@ class Auth {
             session_set_cookie_params($sessionLifetime);
             session_start();
         }
+
+        // Ensure a CSRF token exists for the duration of the session
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
     }
     
     public static function login($usuario, $password) {
