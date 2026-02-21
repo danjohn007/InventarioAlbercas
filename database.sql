@@ -253,8 +253,8 @@ CREATE TABLE IF NOT EXISTS gastos (
 -- Insertar roles
 INSERT IGNORE INTO roles (nombre, descripcion, permisos) VALUES
 ('Administrador', 'Control total del sistema', '{"usuarios": ["crear", "leer", "actualizar", "eliminar"], "inventario": ["crear", "leer", "actualizar", "eliminar"], "gastos": ["crear", "leer", "actualizar", "eliminar"], "servicios": ["crear", "leer", "actualizar", "eliminar"], "clientes": ["crear", "leer", "actualizar", "eliminar"], "reportes": ["leer", "exportar"], "ingresos": ["crear", "leer", "actualizar", "eliminar"], "configuraciones": ["leer", "actualizar"]}'),
-('Supervisor', 'Gestión de inventario, gastos y servicios', '{"usuarios": ["leer"], "inventario": ["crear", "leer", "actualizar"], "gastos": ["crear", "leer", "actualizar"], "servicios": ["crear", "leer", "actualizar"], "clientes": ["crear", "leer", "actualizar"], "reportes": ["leer"], "ingresos": ["crear", "leer", "actualizar"]}'),
-('Tecnico', 'Consulta y registro de consumo', '{"inventario": ["leer"], "servicios": ["leer", "actualizar"], "clientes": ["leer"], "gastos": ["crear", "leer"]}');
+('Supervisor', 'Gestión de inventario, gastos y servicios', '{"usuarios": ["leer"], "inventario": ["crear", "leer", "actualizar"], "gastos": ["crear", "leer", "actualizar"], "servicios": ["crear", "leer", "actualizar"], "clientes": ["crear", "leer", "actualizar"], "reportes": ["leer"], "ingresos": ["crear", "leer", "actualizar"], "configuraciones": ["leer"]}'),
+('Tecnico', 'Consulta y registro de consumo', '{"inventario": ["leer"], "servicios": ["leer", "actualizar"], "clientes": ["leer"], "gastos": ["crear", "leer"], "configuraciones": ["leer"]}');
 
 -- Insertar usuarios (password: admin123, supervisor123, tecnico123)
 INSERT IGNORE INTO usuarios (nombre, apellidos, email, telefono, usuario, password, rol_id) VALUES

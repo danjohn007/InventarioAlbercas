@@ -207,8 +207,12 @@ class Auth {
                 'reportes'        => ['leer', 'exportar'],
             ],
             'Supervisor' => [
-                'ingresos' => ['crear', 'leer', 'actualizar'],
-                'reportes' => ['leer', 'exportar'],
+                'configuraciones' => ['leer'],
+                'ingresos'        => ['crear', 'leer', 'actualizar'],
+                'reportes'        => ['leer', 'exportar'],
+            ],
+            'Tecnico' => [
+                'configuraciones' => ['leer'],
             ],
         ];
 

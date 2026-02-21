@@ -66,6 +66,7 @@ $csrf = htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8');
     font-weight: 700;
     font-size: 1rem;
 }
+fieldset.readonly-cfg { opacity: 1; }
 </style>
 
 <!-- Page Header -->
@@ -75,6 +76,13 @@ $csrf = htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8');
         <p class="text-muted mb-0">Administra todas las configuraciones del sistema</p>
     </div>
 </div>
+
+<?php if (!Auth::can('configuraciones', 'actualizar')): ?>
+<div class="alert alert-info d-flex align-items-center gap-2 mb-3">
+    <i class="bi bi-info-circle-fill flex-shrink-0"></i>
+    <span>Est&aacute;s en modo de <strong>solo lectura</strong>. Contacta a un Administrador para modificar las configuraciones.</span>
+</div>
+<?php endif; ?>
 
 <?php if (isset($_SESSION['success'])): ?>
 <div class="alert alert-success alert-dismissible fade show">
@@ -131,9 +139,13 @@ $csrf = htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8');
 
     <!-- Tab Content -->
     <div class="col-lg-9 col-md-8">
+        <?php $canEdit = Auth::can('configuraciones', 'actualizar'); ?>
+        <?php if ($canEdit): ?>
         <form action="<?php echo BASE_URL; ?>configuraciones/actualizar" method="POST" enctype="multipart/form-data" id="configForm">
         <input type="hidden" name="csrf_token" value="<?php echo $csrf; ?>">
+        <?php endif; ?>
 
+        <?php if (!$canEdit): ?><fieldset disabled class="readonly-cfg"><?php endif; ?>
         <div class="tab-content settings-card" id="settingsTabContent">
 
             <!-- TAB 1: SITIO -->
@@ -638,7 +650,9 @@ $csrf = htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8');
             </div>
 
         </div><!-- /.tab-content -->
+        <?php if (!$canEdit): ?></fieldset><?php endif; ?>
 
+        <?php if ($canEdit): ?>
         <!-- Save / Cancel (hidden for view-only tabs) -->
         <div class="d-flex justify-content-end gap-2 mt-4" id="saveButtons">
             <a href="<?php echo BASE_URL; ?>dashboard" class="btn btn-secondary">
@@ -649,6 +663,13 @@ $csrf = htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8');
             </button>
         </div>
         </form>
+        <?php else: ?>
+        <div class="d-flex justify-content-end gap-2 mt-4">
+            <a href="<?php echo BASE_URL; ?>dashboard" class="btn btn-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Volver al Dashboard
+            </a>
+        </div>
+        <?php endif; ?>
     </div><!-- /.col-lg-9 -->
 </div><!-- /.row -->
 
