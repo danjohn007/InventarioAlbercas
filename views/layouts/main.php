@@ -1,30 +1,8 @@
 <?php
-// Load site settings from configuraciones table (with fallback defaults)
 $_sitioNombre    = 'Sistema Albercas';
 $_sitioLogo      = '';
 $_colorPrimario  = '#667eea';
 $_colorSecundario = '#764ba2';
-try {
-    $__db = Database::getInstance();
-    $__cfgs = $__db->query(
-        "SELECT clave, valor FROM configuraciones WHERE clave IN ('sitio_nombre','sitio_logo','color_primario','color_secundario')"
-    )->fetchAll(PDO::FETCH_KEY_PAIR);
-    if (!empty($__cfgs)) {
-        $_sitioNombre     = $__cfgs['sitio_nombre']     ?? $_sitioNombre;
-        $_sitioLogo       = $__cfgs['sitio_logo']       ?? $_sitioLogo;
-        $_colorPrimario   = $__cfgs['color_primario']   ?? $_colorPrimario;
-        $_colorSecundario = $__cfgs['color_secundario'] ?? $_colorSecundario;
-    }
-} catch (Exception $__e) {
-    // Table may not exist yet; keep defaults
-}
-// Sanitize color values: allow only valid hex colors (3 or 6 hex digits)
-$_colorPrimario   = preg_match('/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $_colorPrimario)   ? $_colorPrimario   : '#667eea';
-$_colorSecundario = preg_match('/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $_colorSecundario) ? $_colorSecundario : '#764ba2';
-// Validate logo path: must be a relative path inside uploads/ with no directory traversal
-if (!empty($_sitioLogo) && !preg_match('/^uploads\/[a-zA-Z0-9_\-\.]+\.(png|jpg|jpeg|gif|svg|webp)$/i', $_sitioLogo)) {
-    $_sitioLogo = '';
-}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -305,14 +283,7 @@ if (!empty($_sitioLogo) && !preg_match('/^uploads\/[a-zA-Z0-9_\-\.]+\.(png|jpg|j
                 </li>
                 <?php endif; ?>
                 
-                <?php if (Auth::can('configuraciones', 'leer')): ?>
-                <li class="nav-item">
-                    <a href="<?php echo BASE_URL; ?>configuraciones" class="nav-link <?php echo $activeMenu == 'configuraciones' ? 'active' : ''; ?>">
-                        <i class="bi bi-gear-wide-connected"></i>
-                        <span>Configuraciones Globales</span>
-                    </a>
-                </li>
-                <?php endif; ?>
+
             </ul>
         </nav>
     </aside>
