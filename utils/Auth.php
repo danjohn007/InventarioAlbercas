@@ -239,7 +239,6 @@ class Auth {
                     "UPDATE roles SET permisos = :p WHERE id = :id",
                     ['p' => json_encode($permisos), 'id' => (int)$rolId]
                 );
-                error_log("INFO: Auto-migrated permissions for role '$rolNombre'");
             } catch (Exception $e) {
                 error_log("WARNING: Could not persist migrated permissions for role '$rolNombre': " . $e->getMessage());
             }
