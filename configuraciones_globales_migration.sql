@@ -2,9 +2,9 @@
 -- Migración: Módulo Configuraciones Globales
 -- Fecha: 2026-02-21
 -- Descripción: Expande el módulo de Configuraciones con
---   nuevas secciones: Contacto & Horarios, PayPal, QR API,
---   Dispositivos IoT (Shelly Cloud + HikVision) y
---   Chatbot de WhatsApp.
+--   nuevas secciones: Correo SMTP, Contacto & Horarios,
+--   PayPal, QR API, Dispositivos IoT (Shelly Cloud + HikVision)
+--   y Chatbot de WhatsApp.
 -- ============================================
 
 USE fix360_inventario;
@@ -18,7 +18,20 @@ ALTER TABLE configuraciones
         DEFAULT 'general';
 
 -- ============================================
--- 2. Nuevas configuraciones: Contacto & Horarios
+-- 2. Nuevas configuraciones: Correo SMTP
+-- ============================================
+INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion, categoria) VALUES
+('email_enabled',      '0',                               'booleano', 'Activar envío de correos electrónicos',     'notificaciones'),
+('smtp_host',          '',                                'texto',    'Servidor SMTP (ej: smtp.gmail.com)',         'notificaciones'),
+('smtp_port',          '587',                             'numero',   'Puerto SMTP (587 para TLS, 465 para SSL)',   'notificaciones'),
+('smtp_encryption',    'tls',                             'texto',    'Tipo de encriptación SMTP (tls/ssl/none)',   'notificaciones'),
+('smtp_username',      '',                                'texto',    'Usuario/Email para autenticación SMTP',     'notificaciones'),
+('smtp_password',      '',                                'texto',    'Contraseña para autenticación SMTP',        'notificaciones'),
+('email_from_address', '',                                'texto',    'Dirección de correo remitente',             'notificaciones'),
+('email_from_name',    'Sistema Inventario Albercas',     'texto',    'Nombre del remitente',                      'notificaciones');
+
+-- ============================================
+-- 3. Nuevas configuraciones: Contacto & Horarios
 -- ============================================
 INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion, categoria) VALUES
 ('telefono_principal',           '',                                    'texto',    'Teléfono de contacto principal',                       'contacto'),
@@ -30,7 +43,7 @@ INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion, categoria) 
 ('direccion_contacto',           '',                                    'texto',    'Dirección física de la empresa',                       'contacto');
 
 -- ============================================
--- 3. Nuevas configuraciones: PayPal
+-- 4. Nuevas configuraciones: PayPal
 -- ============================================
 INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion, categoria) VALUES
 ('paypal_mode',                  'sandbox',                             'texto',    'Modo de PayPal: sandbox o live',                       'integraciones'),
@@ -39,7 +52,7 @@ INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion, categoria) 
 ('paypal_secret',                '',                                    'texto',    'Clave secreta (Secret) de la API de PayPal',           'integraciones');
 
 -- ============================================
--- 4. Nuevas configuraciones: API QR Masivo
+-- 5. Nuevas configuraciones: API QR Masivo
 -- ============================================
 INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion, categoria) VALUES
 ('qr_api_provider',              '',                                    'texto',    'Proveedor de API para generación masiva de QR',        'integraciones'),
@@ -47,7 +60,7 @@ INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion, categoria) 
 ('qr_api_url',                   '',                                    'texto',    'URL del endpoint de la API QR',                        'integraciones');
 
 -- ============================================
--- 5. Nuevas configuraciones: IoT – Shelly Cloud
+-- 6. Nuevas configuraciones: IoT – Shelly Cloud
 -- ============================================
 INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion, categoria) VALUES
 ('shelly_api_url',               'https://shelly-12-eu.shelly.cloud',  'texto',    'URL base de la API de Shelly Cloud',                   'integraciones'),
@@ -55,7 +68,7 @@ INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion, categoria) 
 ('shelly_api_key',               '',                                    'texto',    'API Key de Shelly Cloud',                              'integraciones');
 
 -- ============================================
--- 6. Nuevas configuraciones: IoT – HikVision
+-- 7. Nuevas configuraciones: IoT – HikVision
 -- ============================================
 INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion, categoria) VALUES
 ('hikvision_device_ip',          '',                                    'texto',    'Dirección IP del dispositivo HikVision',               'integraciones'),
@@ -63,7 +76,7 @@ INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion, categoria) 
 ('hikvision_password',           '',                                    'texto',    'Contraseña de acceso a HikVision',                     'integraciones');
 
 -- ============================================
--- 7. Nuevas configuraciones: Chatbot WhatsApp
+-- 8. Nuevas configuraciones: Chatbot WhatsApp
 -- ============================================
 INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion, categoria) VALUES
 ('whatsapp_provider',            'meta',                                'texto',    'Proveedor del chatbot de WhatsApp (meta, twilio, etc)', 'integraciones'),
@@ -74,7 +87,7 @@ INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion, categoria) 
 ('whatsapp_phone_number_id',     '',                                    'texto',    'ID del número de teléfono en Meta Business API',       'integraciones');
 
 -- ============================================
--- 8. Verificación de resultados
+-- 9. Verificación de resultados
 -- ============================================
 SELECT categoria, COUNT(*) AS total
 FROM configuraciones

@@ -501,6 +501,13 @@ $router->post('/configuraciones/backups/eliminar', function() {
     $controller->eliminarBackup();
 });
 
+$router->get('/configuraciones/backups/descargar/([^/]+)', function($filename) {
+    Auth::requirePermission('configuraciones', 'leer');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->descargarBackup($filename);
+});
+
 // Rutas de perfil del usuario autenticado
 $router->get('/perfil', function() {
     Auth::requireAuth();

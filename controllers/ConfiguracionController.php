@@ -103,7 +103,15 @@ class ConfiguracionController {
                 ('stock_bajo_alerta',  '1',                                       'booleano', 'Activar alertas de stock bajo',             'notificaciones'),
                 ('email_admin',        'admin@albercas.com',                     'texto',    'Email del administrador del sistema',       'notificaciones'),
                 ('backup_automatico',  '1',                                       'booleano', 'Activar respaldos automáticos',             'sistema'),
-                ('dias_backup',        '7',                                       'numero',   'Días entre respaldos automáticos',          'sistema')");
+                ('dias_backup',        '7',                                       'numero',   'Días entre respaldos automáticos',          'sistema'),
+                ('email_enabled',      '0',                                       'booleano', 'Activar envío de correos electrónicos',     'notificaciones'),
+                ('smtp_host',          '',                                        'texto',    'Servidor SMTP',                             'notificaciones'),
+                ('smtp_port',          '587',                                     'numero',   'Puerto SMTP',                               'notificaciones'),
+                ('smtp_encryption',    'tls',                                     'texto',    'Tipo de encriptación SMTP (tls/ssl/none)',   'notificaciones'),
+                ('smtp_username',      '',                                        'texto',    'Usuario/Email para autenticación SMTP',     'notificaciones'),
+                ('smtp_password',      '',                                        'texto',    'Contraseña para autenticación SMTP',        'notificaciones'),
+                ('email_from_address', '',                                        'texto',    'Dirección de correo remitente',             'notificaciones'),
+                ('email_from_name',    'Sistema Inventario Albercas',             'texto',    'Nombre del remitente',                      'notificaciones')");
 
             // Mark as verified for the rest of this session
             $_SESSION['configuraciones_table_ok'] = true;
@@ -212,6 +220,13 @@ class ConfiguracionController {
             header('Location: ' . BASE_URL . 'configuraciones');
             exit;
         }
+
+        // CSRF validation
+        if (empty($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'])) {
+            $_SESSION['error'] = 'Token de seguridad inválido. Por favor recarga la página e intenta de nuevo.';
+            header('Location: ' . BASE_URL . 'configuraciones');
+            exit;
+        }
         
         $db = Database::getInstance();
         
@@ -223,7 +238,18 @@ class ConfiguracionController {
                     mkdir($uploadDir, 0755, true);
                 }
                 
-                $extension = pathinfo($_FILES['sitio_logo']['name'], PATHINFO_EXTENSION);
+                $allowedExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+                $extension = strtolower(pathinfo($_FILES['sitio_logo']['name'], PATHINFO_EXTENSION));
+                if (!in_array($extension, $allowedExtensions)) {
+                    throw new Exception('Tipo de archivo no permitido para el logotipo.');
+                }
+                // Validate actual MIME type to prevent disguised uploads
+                $finfo = new finfo(FILEINFO_MIME_TYPE);
+                $mimeType = $finfo->file($_FILES['sitio_logo']['tmp_name']);
+                $allowedMimes = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
+                if (!in_array($mimeType, $allowedMimes)) {
+                    throw new Exception('El contenido del archivo no corresponde a una imagen válida.');
+                }
                 $filename = 'logo_' . time() . '.' . $extension;
                 $filepath = $uploadDir . $filename;
                 
@@ -231,10 +257,27 @@ class ConfiguracionController {
                     $_POST['sitio_logo'] = 'uploads/' . $filename;
                 }
             }
+
+            // Boolean (checkbox) fields: query DB for all booleano-type keys and
+            // explicitly set them to '0' when absent from POST (unchecked checkboxes)
+            try {
+                $boolRows = $db->query("SELECT clave FROM configuraciones WHERE tipo = 'booleano'")->fetchAll(PDO::FETCH_COLUMN);
+            } catch (Exception $e) {
+                $boolRows = ['email_enabled', 'notificaciones_email', 'stock_bajo_alerta', 'backup_automatico'];
+            }
+            foreach ($boolRows as $field) {
+                if (!isset($_POST[$field])) {
+                    $_POST[$field] = '0';
+                }
+            }
             
+            // Fetch the list of valid config keys to prevent injecting arbitrary rows
+            $validKeys = $db->query("SELECT clave FROM configuraciones")->fetchAll(PDO::FETCH_COLUMN);
+
             // Actualizar cada configuración
             foreach ($_POST as $clave => $valor) {
                 if (in_array($clave, ['csrf_token', 'sitio_logo_current'])) continue;
+                if (!in_array($clave, $validKeys)) continue;
                 
                 $sql = "UPDATE configuraciones SET valor = :valor WHERE clave = :clave";
                 $db->query($sql, [
