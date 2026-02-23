@@ -741,7 +741,7 @@ $csrf = htmlspecialchars($_SESSION['csrf_token'] ?? '', ENT_QUOTES, 'UTF-8');
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Enviando&hellip;';
             out.innerHTML = '<div class="alert alert-info py-1 px-3 mt-1 small">Enviando correo de prueba&hellip;</div>';
-            fetch('<?php echo BASE_URL; ?>configuraciones/testEmail', {
+            fetch('<?php echo BASE_URL; ?>configuraciones/test-email', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: 'test_email=' + encodeURIComponent(addr)

@@ -282,7 +282,15 @@ $_colorSecundario = '#764ba2';
                     </a>
                 </li>
                 <?php endif; ?>
-                
+
+                <?php if (Auth::can('configuraciones', 'leer')): ?>
+                <li class="nav-item">
+                    <a href="<?php echo BASE_URL; ?>configuraciones" class="nav-link <?php echo $activeMenu == 'configuraciones' ? 'active' : ''; ?>">
+                        <i class="bi bi-gear-wide-connected"></i>
+                        <span>Configuraciones</span>
+                    </a>
+                </li>
+                <?php endif; ?>
 
             </ul>
         </nav>
@@ -306,8 +314,7 @@ $_colorSecundario = '#764ba2';
                     <span class="badge bg-secondary ms-2"><?php echo Auth::user()['rol']; ?></span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Mi Perfil</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Configuración</a></li>
+                    <li><a class="dropdown-item" href="<?php echo BASE_URL; ?>perfil"><i class="bi bi-person me-2"></i>Mi Perfil</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item text-danger" href="<?php echo BASE_URL; ?>logout"><i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión</a></li>
                 </ul>
