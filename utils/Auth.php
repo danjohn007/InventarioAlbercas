@@ -13,6 +13,11 @@ class Auth {
             session_set_cookie_params($sessionLifetime);
             session_start();
         }
+
+        // Generate a CSRF token once per session (used by forms throughout the app)
+        if (empty($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
     }
     
     public static function login($usuario, $password) {
@@ -197,9 +202,14 @@ class Auth {
     public static function ensureRequiredPermissions(array $permisos, $rolNombre, $rolId, $db = null) {
         $requiredByRole = [
             'Administrador' => [
-                'configuraciones' => ['leer', 'actualizar'],
-                'ingresos'        => ['crear', 'leer', 'actualizar', 'eliminar'],
+                'usuarios'        => ['crear', 'leer', 'actualizar', 'eliminar'],
+                'inventario'      => ['crear', 'leer', 'actualizar', 'eliminar'],
+                'gastos'          => ['crear', 'leer', 'actualizar', 'eliminar'],
+                'servicios'       => ['crear', 'leer', 'actualizar', 'eliminar'],
+                'clientes'        => ['crear', 'leer', 'actualizar', 'eliminar'],
                 'reportes'        => ['leer', 'exportar'],
+                'ingresos'        => ['crear', 'leer', 'actualizar', 'eliminar'],
+                'configuraciones' => ['leer', 'actualizar'],
             ],
             'Supervisor' => [
                 'ingresos' => ['crear', 'leer', 'actualizar'],
@@ -269,20 +279,22 @@ class Auth {
 
             if ($result) {
                 $permisos = json_decode($result['permisos'], true);
-                if (is_array($permisos)) {
-                    // Apply self-healing migration.
-                    // Session is updated unconditionally; DB persistence is best-effort
-                    // inside ensureRequiredPermissions (has its own try-catch).
-                    $permisos = self::ensureRequiredPermissions(
-                        $permisos,
-                        $result['rol_nombre'],
-                        (int)$result['rol_id'],
-                        $db
-                    );
-                    $_SESSION['user_permisos'] = $permisos;
-                } else {
-                    error_log("WARNING: JSON de permisos inválido para el usuario ID $userId");
+                if (!is_array($permisos)) {
+                    // NULL or corrupt JSON in the DB – start from scratch so
+                    // ensureRequiredPermissions can fully rebuild the permission set.
+                    error_log("WARNING: JSON de permisos inválido para el usuario ID $userId — reconstruyendo desde cero");
+                    $permisos = [];
                 }
+                // Apply self-healing migration.
+                // Session is updated unconditionally; DB persistence is best-effort
+                // inside ensureRequiredPermissions (has its own try-catch).
+                $permisos = self::ensureRequiredPermissions(
+                    $permisos,
+                    $result['rol_nombre'],
+                    (int)$result['rol_id'],
+                    $db
+                );
+                $_SESSION['user_permisos'] = $permisos;
             }
         } catch (Exception $e) {
             error_log("Error refreshing user permissions: " . $e->getMessage());
