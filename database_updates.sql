@@ -91,7 +91,7 @@ ON DUPLICATE KEY UPDATE clave=clave;
 -- ============================================
 UPDATE roles 
 SET permisos = JSON_SET(
-    permisos,
+    COALESCE(permisos, '{}'),
     '$.ingresos', JSON_ARRAY('crear', 'leer', 'actualizar', 'eliminar'),
     '$.configuraciones', JSON_ARRAY('leer', 'actualizar'),
     '$.reportes', JSON_ARRAY('leer', 'exportar')
@@ -100,7 +100,7 @@ WHERE nombre = 'Administrador';
 
 UPDATE roles 
 SET permisos = JSON_SET(
-    permisos,
+    COALESCE(permisos, '{}'),
     '$.ingresos', JSON_ARRAY('crear', 'leer', 'actualizar'),
     '$.reportes', JSON_ARRAY('leer', 'exportar')
 )

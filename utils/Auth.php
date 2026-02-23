@@ -154,6 +154,14 @@ class Auth {
     public static function requirePermission($modulo, $accion) {
         self::requireAuth();
         
+        // Administrador role has unrestricted access to every module.
+        // Checked via $_SESSION['user_rol'] which is a plain string set at
+        // login time — it never depends on JSON parsing or DB queries, so
+        // it cannot be affected by corrupt/missing permissions in the DB.
+        if (self::hasRole('Administrador')) {
+            return;
+        }
+        
         if (!self::can($modulo, $accion)) {
             // Refresh permissions from DB to handle stale sessions
             // (e.g. role was updated in DB after the user logged in)
