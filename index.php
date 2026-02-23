@@ -416,5 +416,119 @@ $router->get('/ingresos/eliminar/([0-9]+)', function($id) {
     $controller->eliminar($id);
 });
 
+// Rutas de configuraciones
+$router->get('/configuraciones', function() {
+    Auth::requirePermission('configuraciones', 'leer');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->index();
+});
+
+$router->post('/configuraciones/actualizar', function() {
+    Auth::requirePermission('configuraciones', 'actualizar');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->actualizar();
+});
+
+$router->get('/configuraciones/exportar', function() {
+    Auth::requirePermission('configuraciones', 'leer');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->exportar();
+});
+
+$router->post('/configuraciones/importar', function() {
+    Auth::requirePermission('configuraciones', 'actualizar');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->importar();
+});
+
+$router->post('/configuraciones/restablecer', function() {
+    Auth::requirePermission('configuraciones', 'actualizar');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->restablecer();
+});
+
+$router->post('/configuraciones/test-email', function() {
+    Auth::requirePermission('configuraciones', 'actualizar');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->testEmail();
+});
+
+$router->get('/configuraciones/auditoria', function() {
+    Auth::requirePermission('configuraciones', 'leer');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->auditoria();
+});
+
+$router->get('/configuraciones/errores', function() {
+    Auth::requirePermission('configuraciones', 'leer');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->errores();
+});
+
+$router->get('/configuraciones/backups', function() {
+    Auth::requirePermission('configuraciones', 'actualizar');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->backups();
+});
+
+$router->post('/configuraciones/backups/crear', function() {
+    Auth::requirePermission('configuraciones', 'actualizar');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->crearBackup();
+});
+
+$router->post('/configuraciones/backups/restaurar', function() {
+    Auth::requirePermission('configuraciones', 'actualizar');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->restaurarBackup();
+});
+
+$router->post('/configuraciones/backups/eliminar', function() {
+    Auth::requirePermission('configuraciones', 'actualizar');
+    loadController('ConfiguracionController');
+    $controller = new ConfiguracionController();
+    $controller->eliminarBackup();
+});
+
+// Rutas de perfil del usuario autenticado
+$router->get('/perfil', function() {
+    Auth::requireAuth();
+    loadController('UsuariosController');
+    $controller = new UsuariosController();
+    $controller->perfil();
+});
+
+$router->post('/perfil/actualizar', function() {
+    Auth::requireAuth();
+    loadController('UsuariosController');
+    $controller = new UsuariosController();
+    $controller->actualizarPerfil();
+});
+
+$router->post('/perfil/cambiar-password', function() {
+    Auth::requireAuth();
+    loadController('UsuariosController');
+    $controller = new UsuariosController();
+    $controller->cambiarPassword();
+});
+
+$router->post('/perfil/subir-foto', function() {
+    Auth::requireAuth();
+    loadController('UsuariosController');
+    $controller = new UsuariosController();
+    $controller->subirFoto();
+});
+
 // Despachar la ruta
 $router->dispatch();

@@ -398,4 +398,252 @@ class UsuariosController {
         header('Location: ' . BASE_URL . 'usuarios');
         exit;
     }
+
+    /**
+     * Ensure the foto_perfil column exists in the usuarios table.
+     * Uses INFORMATION_SCHEMA to check before issuing ALTER TABLE,
+     * so the check is both accurate and persistent across sessions.
+     */
+    private function ensureFotoPerfilColumn($db) {
+        try {
+            $dbName = $db->query("SELECT DATABASE() AS d")->fetch()['d'];
+            $exists = $db->query(
+                "SELECT COUNT(*) AS c FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = :db AND TABLE_NAME = 'usuarios' AND COLUMN_NAME = 'foto_perfil'",
+                ['db' => $dbName]
+            )->fetch()['c'];
+            if (!$exists) {
+                $db->query("ALTER TABLE usuarios ADD COLUMN foto_perfil VARCHAR(255) DEFAULT NULL");
+            }
+        } catch (Exception $e) {
+            error_log("WARNING: Could not ensure foto_perfil column: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Mi Perfil – shows the authenticated user's profile page.
+     */
+    public function perfil() {
+        Auth::requireAuth();
+
+        $db = Database::getInstance();
+        $this->ensureFotoPerfilColumn($db);
+
+        $authUser = Auth::user();
+        $usuario = $db->query(
+            "SELECT u.*, r.nombre as rol_nombre FROM usuarios u
+             INNER JOIN roles r ON u.rol_id = r.id
+             WHERE u.id = :id LIMIT 1",
+            ['id' => $authUser['id']]
+        )->fetch();
+
+        if (!$usuario) {
+            $_SESSION['error_message'] = 'No se pudo cargar el perfil';
+            header('Location: ' . BASE_URL . 'dashboard');
+            exit;
+        }
+
+        // Recent activity for the current user (last 10 audit entries)
+        try {
+            $actividad = $db->query(
+                "SELECT * FROM auditoria WHERE usuario_id = :id ORDER BY fecha_creacion DESC LIMIT 10",
+                ['id' => $authUser['id']]
+            )->fetchAll();
+        } catch (Exception $e) {
+            $actividad = [];
+        }
+
+        $pageTitle = 'Mi Perfil';
+        $activeMenu = '';
+
+        ob_start();
+        require_once ROOT_PATH . '/views/usuarios/perfil.php';
+        $content = ob_get_clean();
+
+        require ROOT_PATH . '/views/layouts/main.php';
+    }
+
+    /**
+     * Actualizar datos del perfil propio (nombre, apellidos, email, teléfono).
+     */
+    public function actualizarPerfil() {
+        Auth::requireAuth();
+
+        $authUser = Auth::user();
+        $id = $authUser['id'];
+
+        try {
+            $nombre    = trim($_POST['nombre']    ?? '');
+            $apellidos = trim($_POST['apellidos'] ?? '');
+            $email     = trim($_POST['email']     ?? '');
+            $telefono  = trim($_POST['telefono']  ?? '');
+
+            $errores = [];
+            if (empty($nombre))    $errores[] = 'El nombre es requerido';
+            if (empty($apellidos)) $errores[] = 'Los apellidos son requeridos';
+            if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL))
+                $errores[] = 'El email no es válido';
+
+            $db = Database::getInstance();
+
+            // Verify email uniqueness excluding this user
+            $count = $db->query(
+                "SELECT COUNT(*) as c FROM usuarios WHERE email = :email AND id != :id",
+                ['email' => $email, 'id' => $id]
+            )->fetch()['c'];
+            if ($count > 0) $errores[] = 'El email ya está registrado por otro usuario';
+
+            if (!empty($errores)) {
+                $_SESSION['error_message'] = '<ul class="mb-0"><li>' . implode('</li><li>', $errores) . '</li></ul>';
+                header('Location: ' . BASE_URL . 'perfil');
+                exit;
+            }
+
+            $db->query(
+                "UPDATE usuarios SET nombre = :nombre, apellidos = :apellidos,
+                 email = :email, telefono = :telefono WHERE id = :id",
+                ['nombre' => $nombre, 'apellidos' => $apellidos,
+                 'email' => $email, 'telefono' => $telefono, 'id' => $id]
+            );
+
+            // Refresh session name
+            $_SESSION['user_nombre']    = $nombre;
+            $_SESSION['user_apellidos'] = $apellidos;
+            $_SESSION['user_email']     = $email;
+
+            Auth::registrarAuditoria($id, 'actualizar', 'usuarios', $id, 'Perfil propio actualizado');
+
+            $_SESSION['success_message'] = 'Perfil actualizado correctamente';
+        } catch (Exception $e) {
+            error_log("Error actualizarPerfil: " . $e->getMessage());
+            $_SESSION['error_message'] = 'Error al actualizar el perfil';
+        }
+
+        header('Location: ' . BASE_URL . 'perfil');
+        exit;
+    }
+
+    /**
+     * Cambiar contraseña del usuario autenticado.
+     */
+    public function cambiarPassword() {
+        Auth::requireAuth();
+
+        $authUser = Auth::user();
+        $id = $authUser['id'];
+
+        try {
+            $actual  = $_POST['password_actual']  ?? '';
+            $nuevo   = $_POST['password_nuevo']   ?? '';
+            $confirm = $_POST['password_confirm'] ?? '';
+
+            $errores = [];
+            if (empty($actual))  $errores[] = 'La contraseña actual es requerida';
+            if (strlen($nuevo) < 6) $errores[] = 'La nueva contraseña debe tener al menos 6 caracteres';
+            if ($nuevo !== $confirm) $errores[] = 'Las contraseñas nuevas no coinciden';
+
+            if (!empty($errores)) {
+                $_SESSION['error_message'] = '<ul class="mb-0"><li>' . implode('</li><li>', $errores) . '</li></ul>';
+                header('Location: ' . BASE_URL . 'perfil');
+                exit;
+            }
+
+            $db = Database::getInstance();
+            $row = $db->query("SELECT password FROM usuarios WHERE id = :id LIMIT 1", ['id' => $id])->fetch();
+
+            if (!$row || !password_verify($actual, $row['password'])) {
+                $_SESSION['error_message'] = 'La contraseña actual es incorrecta';
+                header('Location: ' . BASE_URL . 'perfil');
+                exit;
+            }
+
+            $db->query(
+                "UPDATE usuarios SET password = :pwd WHERE id = :id",
+                ['pwd' => password_hash($nuevo, PASSWORD_DEFAULT), 'id' => $id]
+            );
+
+            Auth::registrarAuditoria($id, 'cambiar_password', 'usuarios', $id, 'Contraseña cambiada desde perfil');
+
+            $_SESSION['success_message'] = 'Contraseña cambiada correctamente';
+        } catch (Exception $e) {
+            error_log("Error cambiarPassword: " . $e->getMessage());
+            $_SESSION['error_message'] = 'Error al cambiar la contraseña';
+        }
+
+        header('Location: ' . BASE_URL . 'perfil');
+        exit;
+    }
+
+    /**
+     * Subir / cambiar foto de perfil.
+     */
+    public function subirFoto() {
+        Auth::requireAuth();
+
+        $authUser = Auth::user();
+        $id = $authUser['id'];
+
+        try {
+            if (!isset($_FILES['foto_perfil']) || $_FILES['foto_perfil']['error'] !== UPLOAD_ERR_OK) {
+                throw new Exception('No se recibió ninguna imagen válida');
+            }
+
+            $file = $_FILES['foto_perfil'];
+
+            // Validate MIME type
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+
+            if (!in_array($mime, $allowedMimes)) {
+                throw new Exception('Solo se permiten imágenes (JPG, PNG, GIF, WebP)');
+            }
+
+            // Max 2 MB
+            if ($file['size'] > 2 * 1024 * 1024) {
+                throw new Exception('La imagen no debe superar 2 MB');
+            }
+
+            $uploadDir = ROOT_PATH . '/public/uploads/fotos/';
+            if (!file_exists($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            $ext      = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $filename = 'foto_' . $id . '_' . time() . '.' . strtolower($ext);
+            $destPath = $uploadDir . $filename;
+
+            if (!move_uploaded_file($file['tmp_name'], $destPath)) {
+                throw new Exception('Error al guardar la imagen');
+            }
+
+            $db = Database::getInstance();
+            $this->ensureFotoPerfilColumn($db);
+
+            // Delete old photo if it exists and is not the default
+            $old = $db->query("SELECT foto_perfil FROM usuarios WHERE id = :id LIMIT 1", ['id' => $id])->fetch();
+            if ($old && !empty($old['foto_perfil'])) {
+                $oldPath = ROOT_PATH . '/public/uploads/' . $old['foto_perfil'];
+                if (file_exists($oldPath)) {
+                    @unlink($oldPath);
+                }
+            }
+
+            $db->query(
+                "UPDATE usuarios SET foto_perfil = :foto WHERE id = :id",
+                ['foto' => 'fotos/' . $filename, 'id' => $id]
+            );
+
+            Auth::registrarAuditoria($id, 'subir_foto', 'usuarios', $id, 'Foto de perfil actualizada');
+
+            $_SESSION['success_message'] = 'Foto de perfil actualizada correctamente';
+        } catch (Exception $e) {
+            error_log("Error subirFoto: " . $e->getMessage());
+            $_SESSION['error_message'] = 'Error al subir la foto: ' . $e->getMessage();
+        }
+
+        header('Location: ' . BASE_URL . 'perfil');
+        exit;
+    }
 }
