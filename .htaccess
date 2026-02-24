@@ -1,15 +1,19 @@
 # -----------------------------------------------------------------------
 # URL Rewriting
 # -----------------------------------------------------------------------
-Options +FollowSymLinks -Indexes
+# Use SymLinksIfOwnerMatch instead of FollowSymLinks: it satisfies
+# mod_rewrite's requirement while avoiding the 403 Forbidden that many
+# cPanel/shared-hosting servers return when +FollowSymLinks appears in
+# .htaccess (triggered by the server's symlink-attack protection).
+Options +SymLinksIfOwnerMatch -Indexes
 DirectoryIndex index.php
 RewriteEngine On
 
-# Configuración de PHP (intentar sobrescribir open_basedir si es posible)
-# Nota: Esto puede no funcionar en todos los servidores si está bloqueado por el admin
-<IfModule mod_php.c>
-    php_admin_value open_basedir none
-</IfModule>
+# NOTE: open_basedir is configured in .user.ini (PHP-FPM per-directory ini).
+# DO NOT set php_admin_value / php_value here: those directives require
+# AllowOverride Options in httpd.conf. When that permission is absent
+# (common on cPanel shared hosting) Apache returns 403 Forbidden for the
+# ENTIRE directory, blocking every page including /configuraciones.
 
 # Seguridad adicional - Headers HTTP
 <IfModule mod_headers.c>
@@ -30,8 +34,9 @@ RewriteEngine On
     Header always unset X-Powered-By
 </IfModule>
 
-# Route all non-file requests through the PHP application router.
+# Route all non-file, non-directory requests through the PHP application router.
 RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
 
 # Proteger archivos de configuración
